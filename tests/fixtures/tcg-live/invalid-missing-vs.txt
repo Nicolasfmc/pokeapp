@@ -1,0 +1,5 @@
+SoloPlayer Only
+
+Format: Standard
+Result: W
+Turn Order: FIRST

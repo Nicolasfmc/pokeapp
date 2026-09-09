@@ -1,0 +1,19 @@
+{
+  "id": "swsh3",
+  "name": "Darkness Ablaze",
+  "logo": "https://assets.tcgdex.net/en/swsh/swsh3/logo",
+  "symbol": "https://assets.tcgdex.net/univ/swsh/swsh3/symbol",
+  "releaseDate": "2020-08-14",
+  "tcgOnline": "DAA",
+  "abbreviation": {
+    "official": "DAA"
+  },
+  "serie": {
+    "id": "swsh",
+    "name": "Sword & Shield"
+  },
+  "cardCount": {
+    "total": 201,
+    "official": 189
+  }
+}

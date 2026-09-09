@@ -1,0 +1,19 @@
+{
+  "id": "tef-144",
+  "localId": "144",
+  "name": "Buddy-Buddy Poffin",
+  "category": "Trainer",
+  "illustrator": "Orioto",
+  "image": "https://assets.tcgdex.net/en/sv/tef/144",
+  "rarity": "Uncommon",
+  "regulationMark": "H",
+  "updated": "2025-01-15T12:00:00+00:00",
+  "legal": {
+    "standard": true,
+    "expanded": true
+  },
+  "set": {
+    "id": "tef",
+    "name": "Temporal Forces"
+  }
+}

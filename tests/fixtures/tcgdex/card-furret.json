@@ -1,0 +1,21 @@
+{
+  "id": "swsh3-136",
+  "localId": "136",
+  "name": "Furret",
+  "category": "Pokemon",
+  "illustrator": "tetsuya koizumi",
+  "image": "https://assets.tcgdex.net/en/swsh/swsh3/136",
+  "rarity": "Uncommon",
+  "regulationMark": "D",
+  "updated": "2026-07-01T21:27:44+01:00",
+  "legal": {
+    "standard": false,
+    "expanded": true
+  },
+  "set": {
+    "id": "swsh3",
+    "name": "Darkness Ablaze",
+    "logo": "https://assets.tcgdex.net/en/swsh/swsh3/logo",
+    "symbol": "https://assets.tcgdex.net/univ/swsh/swsh3/symbol"
+  }
+}

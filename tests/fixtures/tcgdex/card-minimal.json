@@ -1,0 +1,10 @@
+{
+  "id": "base1-4",
+  "localId": "4",
+  "name": "Charmander",
+  "category": "Pokemon",
+  "rarity": "Common",
+  "set": {
+    "id": "base1"
+  }
+}

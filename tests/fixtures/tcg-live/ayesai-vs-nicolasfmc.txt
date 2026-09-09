@@ -1,0 +1,23 @@
+Ayesai vs nicolasfmc
+
+Format: TEF-PBL
+
+Setup
+Ayesai flipped a coin to decide who goes first.
+The coin landed on heads.
+Ayesai will go first.
+
+Turn # 1 - Ayesai's Turn
+Ayesai drew a card.
+Ayesai played (twm_128) Dreepy to the Bench.
+Ayesai shuffled their deck.
+
+Turn # 2 - nicolasfmc's Turn
+nicolasfmc drew a card.
+nicolasfmc played (svi_181) Nest Ball.
+nicolasfmc shuffled their deck.
+
+Turn # 3 - Ayesai's Turn
+Ayesai drew a card.
+
+All of nicolasfmc's Pokémon are Knocked Out. Ayesai wins.

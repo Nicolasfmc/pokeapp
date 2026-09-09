@@ -1,0 +1,443 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AccountStatus {
+  ACTIVE
+  DELETION_PENDING
+  PERMANENTLY_DELETED
+}
+
+enum CardCategory {
+  POKEMON
+  TRAINER
+  ENERGY
+}
+
+enum PhysicalStatus {
+  SLEEVED
+  NOT_SLEEVED
+}
+
+enum DeckImportStatus {
+  IMPORTED
+  PARTIALLY_RESOLVED
+  READY
+  INVALID
+}
+
+enum DeckTagName {
+  FAVORITE
+  TESTING
+  ARCHIVED
+}
+
+enum Condition {
+  NM
+  LP
+  MP
+  HP
+  DMG
+}
+
+enum CollectionStatus {
+  COMPETITIVE
+  COLLECTION
+}
+
+enum InventoryTransactionReason {
+  PURCHASE
+  SALE
+  TRADE
+  GIFT
+  LOST
+  DAMAGED
+  CORRECTION
+  OTHER
+}
+
+enum MatchResult {
+  WIN
+  LOSS
+  DRAW
+  UNKNOWN
+}
+
+enum TurnOrder {
+  FIRST
+  SECOND
+}
+
+model User {
+  id                   String        @id @default(cuid())
+  email                String        @unique
+  username             String        @unique
+  passwordHash         String
+  accountStatus        AccountStatus @default(ACTIVE)
+  usernameChangedAt    DateTime?
+  deletionRequestedAt  DateTime?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  profile                 UserProfile?
+  decks                   Deck[]
+  inventoryItems          InventoryItem[]
+  inventoryTransactions   InventoryTransaction[]
+  battleLogs              BattleLog[]
+  matches                 Match[]
+  tournaments             Tournament[]
+  auditLogs               AuditLog[]
+
+  @@index([username])
+  @@index([accountStatus])
+  @@map("users")
+}
+
+model UserProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  displayName String
+  bio         String?
+  avatarUrl   String?
+  isPublic    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+model CardSet {
+  id          String    @id @default(cuid())
+  tcgdexId    String    @unique
+  name        String
+  code        String?
+  series      String?
+  releaseDate DateTime?
+  logoUrl     String?
+  symbolUrl   String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  printings CardPrinting[]
+
+  @@index([code])
+  @@index([name])
+  @@map("card_sets")
+}
+
+model CardLogical {
+  id            String       @id @default(cuid())
+  canonicalName String
+  category      CardCategory
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  printings CardPrinting[]
+  deckCards DeckCard[]
+
+  @@unique([canonicalName, category])
+  @@index([canonicalName])
+  @@index([category])
+  @@map("card_logicals")
+}
+
+model CardPrinting {
+  id              String       @id @default(cuid())
+  tcgdexId        String       @unique
+  logicalCardId   String
+  setId           String
+  localId         String
+  name            String
+  category        CardCategory
+  rarity          String?
+  illustrator     String?
+  regulationMark  String?
+  legalStandard   Boolean      @default(false)
+  legalExpanded   Boolean      @default(false)
+  imageUrl        String?
+  tcgdexUpdatedAt DateTime?
+  isActive        Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  logicalCard    CardLogical     @relation(fields: [logicalCardId], references: [id], onDelete: Restrict)
+  set            CardSet         @relation(fields: [setId], references: [id], onDelete: Restrict)
+  inventoryItems InventoryItem[]
+
+  @@unique([setId, localId])
+  @@index([tcgdexId])
+  @@index([setId])
+  @@index([localId])
+  @@index([logicalCardId])
+  @@index([name])
+  @@index([category])
+  @@index([regulationMark])
+  @@index([legalStandard])
+  @@index([legalExpanded])
+  @@map("card_printings")
+}
+
+model Format {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  rules       FormatRule[]
+  decks       Deck[]
+  matches     Match[]
+  tournaments Tournament[]
+
+  @@map("formats")
+}
+
+model FormatRule {
+  id        String   @id @default(cuid())
+  formatId  String
+  key       String
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  format Format @relation(fields: [formatId], references: [id], onDelete: Cascade)
+
+  @@unique([formatId, key])
+  @@index([formatId])
+  @@map("format_rules")
+}
+
+model Archetype {
+  id              String   @id @default(cuid())
+  name            String   @unique
+  displayPokemon  Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  decks              Deck[]
+  opponentMatches    Match[] @relation("OpponentArchetype")
+
+  @@index([name])
+  @@map("archetypes")
+}
+
+model Deck {
+  id             String            @id @default(cuid())
+  userId         String
+  name           String
+  formatId       String
+  archetypeId    String?
+  description    String?
+  physicalStatus PhysicalStatus    @default(NOT_SLEEVED)
+  importStatus   DeckImportStatus?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  format       Format            @relation(fields: [formatId], references: [id], onDelete: Restrict)
+  archetype    Archetype?        @relation(fields: [archetypeId], references: [id], onDelete: SetNull)
+  cards        DeckCard[]
+  tags         DeckTag[]
+  allocations  DeckAllocation[]
+  matches      Match[]
+
+  @@index([userId])
+  @@index([formatId])
+  @@index([archetypeId])
+  @@index([physicalStatus])
+  @@map("decks")
+}
+
+model DeckCard {
+  id            String @id @default(cuid())
+  deckId        String
+  logicalCardId String
+  quantity      Int
+
+  deck        Deck        @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  logicalCard CardLogical @relation(fields: [logicalCardId], references: [id], onDelete: Restrict)
+
+  @@unique([deckId, logicalCardId])
+  @@index([deckId])
+  @@index([logicalCardId])
+  @@map("deck_cards")
+}
+
+model DeckTag {
+  id     String      @id @default(cuid())
+  deckId String
+  tag    DeckTagName
+
+  deck Deck @relation(fields: [deckId], references: [id], onDelete: Cascade)
+
+  @@unique([deckId, tag])
+  @@index([deckId])
+  @@map("deck_tags")
+}
+
+model InventoryItem {
+  id               String           @id @default(cuid())
+  userId           String
+  cardPrintingId   String
+  quantity         Int
+  condition        Condition        @default(NM)
+  language         String           @default("en")
+  collectionStatus CollectionStatus @default(COMPETITIVE)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cardPrinting CardPrinting           @relation(fields: [cardPrintingId], references: [id], onDelete: Restrict)
+  allocations  DeckAllocation[]
+  transactions InventoryTransaction[]
+
+  @@unique([userId, cardPrintingId, condition, language, collectionStatus])
+  @@index([userId])
+  @@index([cardPrintingId])
+  @@index([collectionStatus])
+  @@map("inventory_items")
+}
+
+model DeckAllocation {
+  id              String   @id @default(cuid())
+  deckId          String
+  inventoryItemId String
+  quantity        Int
+  createdAt       DateTime @default(now())
+
+  deck          Deck          @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Restrict)
+
+  @@unique([deckId, inventoryItemId])
+  @@index([deckId])
+  @@index([inventoryItemId])
+  @@map("deck_allocations")
+}
+
+model InventoryTransaction {
+  id              String                      @id @default(cuid())
+  userId          String
+  inventoryItemId String
+  quantityDelta   Int
+  reason          InventoryTransactionReason
+  note            String?
+  createdAt       DateTime                    @default(now())
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([inventoryItemId])
+  @@index([createdAt])
+  @@map("inventory_transactions")
+}
+
+model BattleLog {
+  id            String   @id @default(cuid())
+  userId        String
+  rawLog        String
+  source        String
+  importedAt    DateTime @default(now())
+  parserVersion String
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match Match?
+
+  @@index([userId])
+  @@index([importedAt])
+  @@map("battle_logs")
+}
+
+model Match {
+  id                   String       @id @default(cuid())
+  userId               String
+  battleLogId          String?      @unique
+  deckId               String
+  opponentArchetypeId  String?
+  result               MatchResult
+  turnOrder            TurnOrder?
+  gameFormatCode       String?
+  formatId             String?
+  notes                String?
+  playedAt             DateTime?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  battleLog         BattleLog?        @relation(fields: [battleLogId], references: [id], onDelete: SetNull)
+  deck              Deck              @relation(fields: [deckId], references: [id], onDelete: Restrict)
+  opponentArchetype Archetype?        @relation("OpponentArchetype", fields: [opponentArchetypeId], references: [id], onDelete: SetNull)
+  format            Format?           @relation(fields: [formatId], references: [id], onDelete: SetNull)
+  tournamentMatch   TournamentMatch?
+
+  @@index([userId])
+  @@index([deckId])
+  @@index([opponentArchetypeId])
+  @@index([formatId])
+  @@index([playedAt])
+  @@index([result])
+  @@map("matches")
+}
+
+model Tournament {
+  id                String    @id @default(cuid())
+  userId            String
+  name              String
+  date              DateTime?
+  location          String?
+  formatId          String?
+  placement         Int?
+  participantCount  Int?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  format            Format?           @relation(fields: [formatId], references: [id], onDelete: SetNull)
+  tournamentMatches TournamentMatch[]
+
+  @@index([userId])
+  @@index([formatId])
+  @@index([date])
+  @@map("tournaments")
+}
+
+model TournamentMatch {
+  id           String @id @default(cuid())
+  tournamentId String
+  matchId      String @unique
+  round        Int?
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  match      Match      @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, matchId])
+  @@index([tournamentId])
+  @@map("tournament_matches")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
