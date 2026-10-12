@@ -15,6 +15,11 @@ Aplicação Next.js para coleção, decks e treinamento Pokémon TCG.
 - Vitest (parsers, sync, availability, allocation, statistics)
 - Catálogo de cartas via sync TCGdex → PostgreSQL (runtime não chama TCGdex)
 
+## Requisitos
+
+- Node.js 22.6 ou mais novo (versão em `.nvmrc`; com nvm, rode `nvm use`). O seed usa `node --experimental-strip-types`, que não existe no Node 20.
+- PostgreSQL.
+
 ## Variáveis de ambiente
 
 Copie `.env.example` para `.env`:
