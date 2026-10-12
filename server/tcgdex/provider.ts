@@ -134,9 +134,27 @@ export class TCGdexProvider implements CardDataProvider {
       }
     }
 
-    const cards = await mapPool([...cardIds], this.concurrency, async (cardId) => {
-      return this.getCard(cardId);
+    const skippedCardIds: string[] = [];
+    const maybeCards = await mapPool([...cardIds], this.concurrency, async (cardId) => {
+      try {
+        return await this.getCard(cardId);
+      } catch (error) {
+        // Some upstream ids (e.g. "exu-?") are listed by TCGdex but cannot be
+        // fetched individually. Skip them instead of aborting the whole sync.
+        if (error instanceof TcgdexNotFoundError) {
+          skippedCardIds.push(cardId);
+          return null;
+        }
+        throw error;
+      }
     });
+    const cards = maybeCards.filter((card): card is ExternalCard => card !== null);
+
+    if (skippedCardIds.length > 0) {
+      console.warn(
+        `[tcgdex] ${skippedCardIds.length} card(s) not found upstream and skipped: ${skippedCardIds.join(", ")}`,
+      );
+    }
 
     return { sets, cards };
   }
