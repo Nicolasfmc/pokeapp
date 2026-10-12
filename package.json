@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "sync:tcgdex": "node --experimental-strip-types scripts/sync-tcgdex.ts",
+    "sync:tcgdex": "tsx scripts/sync-tcgdex.ts",
     "prisma:generate": "prisma generate",
     "prisma:validate": "prisma validate",
     "prisma:migrate": "prisma migrate dev",
@@ -36,6 +36,7 @@
     "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^16.6.1",
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
     "postcss": "^8.5.28",
@@ -43,6 +44,7 @@
     "postcss-simple-vars": "^7.0.1",
     "prisma": "^7.10.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^3.2.4"
   }
