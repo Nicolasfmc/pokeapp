@@ -101,7 +101,7 @@ export function CardsSearchFilters({
   return (
     <form
       onSubmit={onSubmit}
-      className="rounded-2xl bg-[color-mix(in_srgb,var(--poke-panel)_88%,transparent)] p-4 ring-1 ring-[var(--poke-line)] sm:p-5"
+      className="rounded-2xl bg-[color-mix(in_srgb,var(--sb-panel)_88%,transparent)] p-4 ring-1 ring-[var(--sb-line)] sm:p-5"
     >
       <Stack gap="md">
         <TextInput

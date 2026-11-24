@@ -326,7 +326,7 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
   }
 
   return (
-    <Stack gap="lg" className="max-w-6xl animate-[poke-rise_0.45s_ease-out]">
+    <Stack gap="lg" className="max-w-6xl animate-[sb-rise_0.45s_ease-out]">
       <DeckCoverPicker
         deck={deck}
         opened={coverOpen}
@@ -370,7 +370,7 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
           <form onSubmit={onSaveMeta}>
             <Stack
               gap="md"
-              className="rounded-xl border border-[var(--poke-line)] bg-[var(--poke-panel)]/85 p-4"
+              className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/85 p-4"
             >
               <Text fw={700}>Metadados</Text>
               <Stack gap={6}>
@@ -380,7 +380,7 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
                 <button
                   type="button"
                   onClick={() => setCoverOpen(true)}
-                  className="cursor-pointer overflow-hidden rounded-lg border-0 p-0 ring-1 ring-[var(--poke-line)] hover:ring-[var(--poke-accent)]"
+                  className="cursor-pointer overflow-hidden rounded-lg border-0 p-0 ring-1 ring-[var(--sb-line)] hover:ring-[var(--sb-accent)]"
                   aria-label="Escolher capa do deck"
                 >
                   <CardArt src={deck.coverImageUrl} alt={`Capa de ${deck.name}`} />
@@ -434,7 +434,7 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
 
           <Stack
             gap="sm"
-            className="rounded-xl border border-[var(--poke-line)] bg-[var(--poke-panel)]/85 p-4"
+            className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/85 p-4"
           >
             <Text fw={700}>Resumo</Text>
             <Text size="sm">
@@ -496,7 +496,7 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
             <Group
               align="flex-end"
               gap="sm"
-              className="rounded-xl border border-[var(--poke-line)] bg-[var(--poke-panel)]/85 p-4"
+              className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/85 p-4"
               wrap="wrap"
             >
               <TextInput
@@ -536,7 +536,7 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
           {grouped.length === 0 ? (
             <Stack
               gap="xs"
-              className="rounded-xl border border-dashed border-[var(--poke-line)] px-5 py-8"
+              className="rounded-xl border border-dashed border-[var(--sb-line)] px-5 py-8"
             >
               <Text fw={600}>Lista vazia</Text>
               <Text size="sm" c="dimmed">
@@ -556,7 +556,7 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
               <Stack
                 key={group.category}
                 gap="xs"
-                className="rounded-xl border border-[var(--poke-line)] bg-[var(--poke-panel)]/85 p-4"
+                className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/85 p-4"
               >
                 <Group justify="space-between">
                   <Text fw={700}>

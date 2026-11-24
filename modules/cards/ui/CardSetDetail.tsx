@@ -15,7 +15,7 @@ export function CardSetDetail({ set }: CardSetDetailProps) {
         <div>
           <Link
             href="/cards"
-            className="text-sm text-[color-mix(in_srgb,var(--poke-ink)_55%,transparent)] no-underline hover:text-[var(--poke-accent)]"
+            className="text-sm text-[color-mix(in_srgb,var(--sb-ink)_55%,transparent)] no-underline hover:text-[var(--sb-accent)]"
           >
             ← Voltar à busca
           </Link>

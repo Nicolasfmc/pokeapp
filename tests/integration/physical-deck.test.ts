@@ -49,7 +49,7 @@ describe.skipIf(!RUN)("integração: deck físico, inventory, training", async (
   beforeAll(async () => {
     const user = await prisma.user.create({
       data: {
-        email: `it-${suffix}@pokeapp.test`,
+        email: `it-${suffix}@sleevebuild.test`,
         username: `it${suffix}`.slice(0, 20),
         passwordHash: "x",
         profile: { create: { displayName: "Integration" } },

@@ -57,7 +57,7 @@ export function DeckCoverPicker({ deck, opened, onClose, onChange }: Props) {
       centered
     >
       <Stack gap="md">
-        <div className="mx-auto w-full max-w-sm overflow-hidden rounded-xl ring-1 ring-[var(--poke-line)]">
+        <div className="mx-auto w-full max-w-sm overflow-hidden rounded-xl ring-1 ring-[var(--sb-line)]">
           <CardArt src={deck.coverImageUrl} alt="Capa atual" />
         </div>
         {error ? <Alert color="red">{error}</Alert> : null}
@@ -86,7 +86,7 @@ export function DeckCoverPicker({ deck, opened, onClose, onChange }: Props) {
                       src={card.imageUrl}
                       alt={card.canonicalName}
                       sizes="120px"
-                      className={selected ? "ring-4 ring-[var(--poke-accent)]" : ""}
+                      className={selected ? "ring-4 ring-[var(--sb-accent)]" : ""}
                     />
                   </button>
                 );

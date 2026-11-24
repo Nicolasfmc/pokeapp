@@ -7,13 +7,13 @@ export default function AuthLayout({
 }) {
   return (
     <div className="relative flex min-h-dvh flex-col items-center justify-center px-4 py-12">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--poke-glow),transparent_55%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--sb-glow),transparent_55%)]" />
       <div className="relative z-10 mb-10 text-center">
         <Link
           href="/login"
-          className="font-[family-name:var(--font-space-grotesk)] text-3xl font-bold tracking-tight text-[var(--poke-ink)] no-underline"
+          className="font-[family-name:var(--font-space-grotesk)] text-3xl font-bold tracking-tight text-[var(--sb-ink)] no-underline"
         >
-          PokeApp
+          SleeveBuild
         </Link>
       </div>
       <div className="relative z-10 w-full max-w-md">{children}</div>

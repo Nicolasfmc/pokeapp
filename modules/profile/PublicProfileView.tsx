@@ -13,7 +13,7 @@ export function PublicProfileView({
 }: PublicProfileViewProps) {
   return (
     <section className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6">
-      <Stack gap="xl" className="animate-[poke-rise_480ms_ease-out]">
+      <Stack gap="xl" className="animate-[sb-rise_480ms_ease-out]">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
           <Avatar
             src={profile.avatarUrl}
@@ -27,20 +27,20 @@ export function PublicProfileView({
           <div className="min-w-0 flex-1">
             <Title
               order={1}
-              className="font-[family-name:var(--font-space-grotesk)] text-3xl tracking-tight text-[var(--poke-ink)]"
+              className="font-[family-name:var(--font-space-grotesk)] text-3xl tracking-tight text-[var(--sb-ink)]"
             >
               {profile.displayName}
             </Title>
             <Text
               component="p"
-              className="mt-1 font-[family-name:var(--font-ibm-plex-mono)] text-sm text-[color-mix(in_srgb,var(--poke-ink)_65%,transparent)]"
+              className="mt-1 font-[family-name:var(--font-ibm-plex-mono)] text-sm text-[color-mix(in_srgb,var(--sb-ink)_65%,transparent)]"
             >
               @{profile.username}
             </Text>
             {profile.bio ? (
               <Text
                 mt="md"
-                className="max-w-xl text-[color-mix(in_srgb,var(--poke-ink)_80%,transparent)]"
+                className="max-w-xl text-[color-mix(in_srgb,var(--sb-ink)_80%,transparent)]"
               >
                 {profile.bio}
               </Text>

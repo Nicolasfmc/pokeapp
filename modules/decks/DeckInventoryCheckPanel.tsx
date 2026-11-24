@@ -60,7 +60,7 @@ export function DeckInventoryCheckPanel({ deckId, refreshKey, initial, onLoaded 
   return (
     <Stack
       gap="sm"
-      className="rounded-xl border border-[var(--poke-line)] bg-[var(--poke-panel)]/85 p-4"
+      className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/85 p-4"
     >
       <Group justify="space-between">
         <Text fw={700}>Inventory Check</Text>

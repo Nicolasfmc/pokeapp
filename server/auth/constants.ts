@@ -1,4 +1,4 @@
-export const SESSION_COOKIE_NAME = "pokeapp_session";
+export const SESSION_COOKIE_NAME = "sleevebuild_session";
 export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 14;
 export const USERNAME_CHANGE_COOLDOWN_MS = 90 * 24 * 60 * 60 * 1000;
 export const DELETION_GRACE_DAYS = 30;

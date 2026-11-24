@@ -334,7 +334,7 @@ export function TrainingPanel({
   }
 
   return (
-    <Stack gap="xl" className="max-w-5xl animate-[poke-rise_0.45s_ease-out]">
+    <Stack gap="xl" className="max-w-5xl animate-[sb-rise_0.45s_ease-out]">
       <div>
         <Title order={2}>Training</Title>
         <Text c="dimmed" size="sm" mt={4}>
@@ -357,7 +357,7 @@ export function TrainingPanel({
       <form onSubmit={onImport}>
         <Stack
           gap="md"
-          className="rounded-xl border border-[var(--poke-line)] bg-[var(--poke-panel)]/85 px-4 py-5"
+          className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/85 px-4 py-5"
         >
           <Title order={4}>Importar battle log</Title>
           <Textarea
@@ -405,7 +405,7 @@ export function TrainingPanel({
           ) : (
             <Stack
               gap="xs"
-              className="rounded-lg border border-[var(--poke-line)] bg-[var(--poke-accent-soft)]/40 p-3"
+              className="rounded-lg border border-[var(--sb-line)] bg-[var(--sb-accent-soft)]/40 p-3"
             >
               <Text fw={600} size="sm">
                 {preview.player1} vs {preview.player2}
@@ -503,7 +503,7 @@ export function TrainingPanel({
         {matches.length === 0 ? (
           <Stack
             gap="sm"
-            className="rounded-xl border border-[var(--poke-line)] bg-[var(--poke-panel)]/80 px-6 py-10"
+            className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/80 px-6 py-10"
           >
             <Text fw={600}>Nenhuma partida ainda</Text>
             <Text c="dimmed" size="sm">
@@ -515,7 +515,7 @@ export function TrainingPanel({
             <Stack
               key={match.id}
               gap="sm"
-              className="rounded-xl border border-[var(--poke-line)] bg-[var(--poke-panel)]/85 px-4 py-3"
+              className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/85 px-4 py-3"
             >
               <Group justify="space-between" align="flex-start" wrap="wrap">
                 <Stack gap={4} style={{ minWidth: 0, flex: 1 }}>
@@ -581,7 +581,7 @@ export function TrainingPanel({
                 <form onSubmit={onSaveEdit}>
                   <Stack
                     gap="sm"
-                    className="rounded-lg border border-[var(--poke-line)] bg-[var(--poke-bg)]/40 px-3 py-3"
+                    className="rounded-lg border border-[var(--sb-line)] bg-[var(--sb-bg)]/40 px-3 py-3"
                   >
                     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
                       <Select

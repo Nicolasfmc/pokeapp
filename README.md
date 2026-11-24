@@ -1,10 +1,10 @@
-# PokeApp
+# SleeveBuild
 
 Aplicação Next.js para coleção, decks e treinamento Pokémon TCG.
 
 ## Documentação
 
-- Spec: [docs/PokeApp-Product-Technical-Specification-v0.1.md](docs/PokeApp-Product-Technical-Specification-v0.1.md)
+- Spec: [docs/SleeveBuild-Product-Technical-Specification-v0.1.md](docs/SleeveBuild-Product-Technical-Specification-v0.1.md)
 - Contratos Wave 0: [docs/contracts.md](docs/contracts.md)
 - Ownership de agentes: [docs/agent-ownership.md](docs/agent-ownership.md)
 
@@ -49,9 +49,9 @@ Abra [http://localhost:3000](http://localhost:3000).
 PostgreSQL local rápido com Docker:
 
 ```bash
-docker run -d --name pokeapp-postgres -e POSTGRES_USER=pokeapp -e POSTGRES_PASSWORD=pokeapp \
-  -e POSTGRES_DB=pokeapp -p 5432:5432 -v pokeapp-pgdata:/var/lib/postgresql/data postgres:17-alpine
-# DATABASE_URL="postgresql://pokeapp:pokeapp@localhost:5432/pokeapp?schema=public"
+docker run -d --name sleevebuild-postgres -e POSTGRES_USER=sleevebuild -e POSTGRES_PASSWORD=sleevebuild \
+  -e POSTGRES_DB=sleevebuild -p 5432:5432 -v sleevebuild-pgdata:/var/lib/postgresql/data postgres:17-alpine
+# DATABASE_URL="postgresql://sleevebuild:sleevebuild@localhost:5432/sleevebuild?schema=public"
 ```
 
 ### Sync TCGdex
@@ -87,7 +87,7 @@ A constraint `@@unique([canonicalName, category])` exige que não existam duplic
 ## Mapa de módulos
 
 ```
-pokeapp
+sleevebuild
 ├── app/
 │   ├── (app)/           # Shell autenticado (cards, decks, inventory, …)
 │   ├── (auth)/          # Login / registro

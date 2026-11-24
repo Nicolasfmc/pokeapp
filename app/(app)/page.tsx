@@ -42,11 +42,11 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-3 rounded-xl border border-[var(--poke-line)] bg-[var(--poke-panel)]/85 p-4">
+    <section className="flex flex-col gap-3 rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/85 p-4">
       <div className="flex items-center justify-between gap-2">
         <Text fw={700}>{title}</Text>
         {href ? (
-          <Link href={href} className="text-sm text-[var(--poke-accent)] no-underline">
+          <Link href={href} className="text-sm text-[var(--sb-accent)] no-underline">
             {linkLabel ?? "Ver tudo"}
           </Link>
         ) : null}
@@ -103,13 +103,13 @@ export default async function DashboardPage() {
         <div className="flex flex-wrap gap-2">
           <Link
             href="/decks/import"
-            className="rounded-md bg-[var(--poke-accent-soft)] px-3 py-1.5 text-sm font-semibold text-[var(--poke-accent)] no-underline"
+            className="rounded-md bg-[var(--sb-accent-soft)] px-3 py-1.5 text-sm font-semibold text-[var(--sb-accent)] no-underline"
           >
             Importar deck
           </Link>
           <Link
             href="/training"
-            className="rounded-md bg-[var(--poke-accent)] px-3 py-1.5 text-sm font-semibold text-white no-underline"
+            className="rounded-md bg-[var(--sb-accent)] px-3 py-1.5 text-sm font-semibold text-white no-underline"
           >
             Registrar partida
           </Link>
@@ -117,7 +117,7 @@ export default async function DashboardPage() {
       </div>
 
       {isEmpty ? (
-        <section className="rounded-xl border border-dashed border-[var(--poke-line)] p-6">
+        <section className="rounded-xl border border-dashed border-[var(--sb-line)] p-6">
           <Text fw={600}>Comece por aqui</Text>
           <ol className="mt-2 list-decimal pl-5 text-sm leading-7">
             <li>
@@ -147,7 +147,7 @@ export default async function DashboardPage() {
         ].map((tile) => (
           <div
             key={tile.label}
-            className="rounded-xl border border-[var(--poke-line)] bg-[var(--poke-panel)]/85 p-4"
+            className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/85 p-4"
           >
             <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
               {tile.label}

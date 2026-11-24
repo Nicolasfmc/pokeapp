@@ -5,7 +5,7 @@ import { Button } from "@mantine/core";
 
 export function HomeCtas() {
   return (
-    <div className="poke-rise-delay mt-8 flex flex-wrap gap-3">
+    <div className="sb-rise-delay mt-8 flex flex-wrap gap-3">
       <Button component={Link} href="/decks" size="md" color="ember">
         Abrir decks
       </Button>

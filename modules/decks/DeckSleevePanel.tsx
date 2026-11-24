@@ -188,7 +188,7 @@ export function DeckSleevePanel({ deck, onDeckChange }: Props) {
   return (
     <Stack
       gap="sm"
-      className="rounded-xl border border-[var(--poke-line)] bg-[var(--poke-panel)]/85 p-4"
+      className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/85 p-4"
     >
       <Group justify="space-between" align="center">
         <Text fw={700}>Sleevado físico</Text>

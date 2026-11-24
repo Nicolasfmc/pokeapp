@@ -150,7 +150,7 @@ export function TournamentListPanel({
   }
 
   return (
-    <Stack gap="lg" className="max-w-5xl animate-[poke-rise_0.45s_ease-out]">
+    <Stack gap="lg" className="max-w-5xl animate-[sb-rise_0.45s_ease-out]">
       <div>
         <Title order={2}>Torneios</Title>
         <Text c="dimmed" size="sm" mt={4}>
@@ -167,7 +167,7 @@ export function TournamentListPanel({
       <form onSubmit={onCreate}>
         <Stack
           gap="sm"
-          className="rounded-xl border border-[var(--poke-line)] bg-[var(--poke-panel)]/80 px-4 py-4"
+          className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/80 px-4 py-4"
         >
           <Text fw={600}>Novo torneio</Text>
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
@@ -227,7 +227,7 @@ export function TournamentListPanel({
       {tournaments.length === 0 ? (
         <Stack
           gap="sm"
-          className="rounded-xl border border-[var(--poke-line)] bg-[var(--poke-panel)]/80 px-6 py-10"
+          className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/80 px-6 py-10"
         >
           <Text fw={600}>Nenhum torneio ainda</Text>
           <Text c="dimmed" size="sm">
@@ -242,7 +242,7 @@ export function TournamentListPanel({
               justify="space-between"
               align="center"
               wrap="nowrap"
-              className="rounded-xl border border-[var(--poke-line)] bg-[var(--poke-panel)]/85 px-4 py-3 transition-colors hover:border-[var(--poke-accent)]"
+              className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/85 px-4 py-3 transition-colors hover:border-[var(--sb-accent)]"
             >
               <Stack gap={4} style={{ minWidth: 0, flex: 1 }}>
                 <Group gap="sm" wrap="wrap">
@@ -250,7 +250,7 @@ export function TournamentListPanel({
                     component={Link}
                     href={`/tournaments/${tournament.id}`}
                     fw={700}
-                    className="text-[var(--poke-ink)] no-underline hover:underline"
+                    className="text-[var(--sb-ink)] no-underline hover:underline"
                   >
                     {tournament.name}
                   </Text>

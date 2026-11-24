@@ -89,7 +89,7 @@ export function DeckCardSearch({ formatCode, quantities = {}, onAdd }: Props) {
   return (
     <Stack
       gap="sm"
-      className="rounded-xl border border-[var(--poke-line)] bg-[var(--poke-panel)]/85 p-4"
+      className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/85 p-4"
     >
       <Text fw={700}>Buscar carta</Text>
       <TextInput
@@ -141,7 +141,7 @@ export function DeckCardSearch({ formatCode, quantities = {}, onAdd }: Props) {
               type="button"
               title={`Adicionar ${card.canonicalName}`}
               aria-label={`Adicionar ${card.canonicalName}`}
-              className="group cursor-pointer border-0 bg-transparent p-0 text-left transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-[var(--poke-accent)]"
+              className="group cursor-pointer border-0 bg-transparent p-0 text-left transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-[var(--sb-accent)]"
               onClick={() =>
                 onAdd({
                   logicalCardId: card.id,
@@ -156,7 +156,7 @@ export function DeckCardSearch({ formatCode, quantities = {}, onAdd }: Props) {
                 src={card.imageUrl}
                 alt={card.canonicalName}
                 sizes="(max-width: 640px) 30vw, 120px"
-                className="group-hover:ring-2 group-hover:ring-[var(--poke-accent)]"
+                className="group-hover:ring-2 group-hover:ring-[var(--sb-accent)]"
               >
                 {inDeck > 0 ? (
                   <Badge

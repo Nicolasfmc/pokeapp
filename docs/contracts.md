@@ -1,6 +1,6 @@
 # Contratos — Wave 0 (congelados)
 
-Fonte: [PokeApp Product & Technical Specification v0.1](./PokeApp-Product-Technical-Specification-v0.1.md).  
+Fonte: [SleeveBuild Product & Technical Specification v0.1](./SleeveBuild-Product-Technical-Specification-v0.1.md).  
 Este documento congela decisões e contratos compartilhados para agentes paralelos. Alterações exigem coordenação explícita.
 
 ---
@@ -159,7 +159,7 @@ Convenção:
 ## 8. TCGdex e runtime
 
 ```text
-TCGdex → Synchronization → PostgreSQL → PokeApp
+TCGdex → Synchronization → PostgreSQL → SleeveBuild
 ```
 
 - Chamadas à TCGdex **somente** no sync (WS-C / scripts).
@@ -184,7 +184,7 @@ Reprints são intercambiáveis no deckbuilder; o inventory controla impressões 
 Não implementar inicialmente:
 
 - marketplace
-- venda dentro do PokeApp
+- venda dentro do SleeveBuild
 - sistema de pagamentos
 - preços cadastrados
 - integração com Liga

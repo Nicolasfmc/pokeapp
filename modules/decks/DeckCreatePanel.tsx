@@ -117,7 +117,7 @@ export function DeckCreatePanel() {
   }
 
   return (
-    <Stack gap="lg" className="max-w-xl animate-[poke-rise_0.45s_ease-out]">
+    <Stack gap="lg" className="max-w-xl animate-[sb-rise_0.45s_ease-out]">
       <div>
         <Title order={2}>Novo deck</Title>
         <Text c="dimmed" size="sm" mt={4}>
@@ -128,7 +128,7 @@ export function DeckCreatePanel() {
       <form onSubmit={onSubmit}>
         <Stack
           gap="md"
-          className="rounded-xl border border-[var(--poke-line)] bg-[var(--poke-panel)]/85 p-5"
+          className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/85 p-5"
         >
           {error ? <Alert color="red">{error}</Alert> : null}
 

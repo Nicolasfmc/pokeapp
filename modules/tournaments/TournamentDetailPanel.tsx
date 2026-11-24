@@ -316,7 +316,7 @@ export function TournamentDetailPanel({
   }
 
   return (
-    <Stack gap="lg" className="max-w-5xl animate-[poke-rise_0.45s_ease-out]">
+    <Stack gap="lg" className="max-w-5xl animate-[sb-rise_0.45s_ease-out]">
       <Group justify="space-between" align="flex-end">
         <div>
           <Text
@@ -351,7 +351,7 @@ export function TournamentDetailPanel({
       <form onSubmit={onSave}>
         <Stack
           gap="sm"
-          className="rounded-xl border border-[var(--poke-line)] bg-[var(--poke-panel)]/80 px-4 py-4"
+          className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/80 px-4 py-4"
         >
           <Text fw={600}>Dados do torneio</Text>
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
@@ -411,7 +411,7 @@ export function TournamentDetailPanel({
       <form onSubmit={onAttach}>
         <Stack
           gap="sm"
-          className="rounded-xl border border-[var(--poke-line)] bg-[var(--poke-panel)]/80 px-4 py-4"
+          className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/80 px-4 py-4"
         >
           <Text fw={600}>Anexar partida existente</Text>
           <Text size="sm" c="dimmed">
@@ -457,7 +457,7 @@ export function TournamentDetailPanel({
               justify="space-between"
               align="center"
               wrap="wrap"
-              className="rounded-xl border border-[var(--poke-line)] bg-[var(--poke-panel)]/85 px-4 py-3"
+              className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/85 px-4 py-3"
             >
               <Stack gap={4} style={{ minWidth: 0, flex: 1 }}>
                 <Group gap="sm" wrap="wrap">

@@ -8,59 +8,59 @@
 @import "@mantine/notifications/styles.layer.css";
 
 :root {
-  --poke-ink: #0b1624;
-  --poke-mist: #d7e2ec;
-  --poke-surface: #f4f7fa;
-  --poke-panel: #ffffff;
-  --poke-header: #f7fafc;
-  --poke-nav: #eef3f7;
-  --poke-line: #c9d6e2;
-  --poke-accent: #e08a1c;
-  --poke-accent-soft: #fff1db;
-  --poke-glow: rgba(224, 138, 28, 0.18);
-  --background: var(--poke-surface);
-  --foreground: var(--poke-ink);
+  --sb-ink: #0b1624;
+  --sb-mist: #d7e2ec;
+  --sb-surface: #f4f7fa;
+  --sb-panel: #ffffff;
+  --sb-header: #f7fafc;
+  --sb-nav: #eef3f7;
+  --sb-line: #c9d6e2;
+  --sb-accent: #e08a1c;
+  --sb-accent-soft: #fff1db;
+  --sb-glow: rgba(224, 138, 28, 0.18);
+  --background: var(--sb-surface);
+  --foreground: var(--sb-ink);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-poke-ink: var(--poke-ink);
-  --color-poke-mist: var(--poke-mist);
-  --color-poke-surface: var(--poke-surface);
-  --color-poke-accent: var(--poke-accent);
+  --color-sb-ink: var(--sb-ink);
+  --color-sb-mist: var(--sb-mist);
+  --color-sb-surface: var(--sb-surface);
+  --color-sb-accent: var(--sb-accent);
   --font-sans: var(--font-source-sans);
   --font-mono: var(--font-ibm-plex-mono);
   --font-display: var(--font-space-grotesk);
 }
 
 html[data-mantine-color-scheme="dark"] {
-  --poke-ink: #e8eef4;
-  --poke-mist: #243447;
-  --poke-surface: #0b1220;
-  --poke-panel: #121c2b;
-  --poke-header: #101826;
-  --poke-nav: #0e1724;
-  --poke-line: #2a3b50;
-  --poke-accent: #f0a43a;
-  --poke-accent-soft: #3a2a14;
-  --poke-glow: rgba(240, 164, 58, 0.2);
-  --background: var(--poke-surface);
-  --foreground: var(--poke-ink);
+  --sb-ink: #e8eef4;
+  --sb-mist: #243447;
+  --sb-surface: #0b1220;
+  --sb-panel: #121c2b;
+  --sb-header: #101826;
+  --sb-nav: #0e1724;
+  --sb-line: #2a3b50;
+  --sb-accent: #f0a43a;
+  --sb-accent-soft: #3a2a14;
+  --sb-glow: rgba(240, 164, 58, 0.2);
+  --background: var(--sb-surface);
+  --foreground: var(--sb-ink);
 }
 
 body {
   min-height: 100%;
   color: var(--foreground);
   background:
-    radial-gradient(1200px 600px at 12% -10%, var(--poke-glow), transparent 55%),
+    radial-gradient(1200px 600px at 12% -10%, var(--sb-glow), transparent 55%),
     radial-gradient(900px 500px at 100% 0%, rgba(100, 133, 165, 0.16), transparent 50%),
-    linear-gradient(180deg, var(--poke-surface) 0%, color-mix(in srgb, var(--poke-mist) 35%, var(--poke-surface)) 100%);
+    linear-gradient(180deg, var(--sb-surface) 0%, color-mix(in srgb, var(--sb-mist) 35%, var(--sb-surface)) 100%);
   background-attachment: fixed;
   font-family: var(--font-source-sans), ui-sans-serif, sans-serif;
 }
 
-@keyframes poke-rise {
+@keyframes sb-rise {
   from {
     opacity: 0;
     transform: translateY(12px);
@@ -71,7 +71,7 @@ body {
   }
 }
 
-@keyframes poke-sheen {
+@keyframes sb-sheen {
   from {
     background-position: 0% 50%;
   }
@@ -80,24 +80,24 @@ body {
   }
 }
 
-.poke-rise {
-  animation: poke-rise 0.55s ease-out both;
+.sb-rise {
+  animation: sb-rise 0.55s ease-out both;
 }
 
-.poke-rise-delay {
-  animation: poke-rise 0.7s ease-out 0.12s both;
+.sb-rise-delay {
+  animation: sb-rise 0.7s ease-out 0.12s both;
 }
 
-.poke-brand-sheen {
+.sb-brand-sheen {
   background-image: linear-gradient(
     110deg,
-    var(--poke-ink) 20%,
-    var(--poke-accent) 45%,
-    var(--poke-ink) 70%
+    var(--sb-ink) 20%,
+    var(--sb-accent) 45%,
+    var(--sb-ink) 70%
   );
   background-size: 200% 100%;
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
-  animation: poke-sheen 6s ease-in-out infinite alternate;
+  animation: sb-sheen 6s ease-in-out infinite alternate;
 }
