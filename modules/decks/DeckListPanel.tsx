@@ -10,7 +10,6 @@ import {
   Stack,
   Text,
   Title,
-  ActionIcon,
 } from "@mantine/core";
 import type { DeckDto } from "./types";
 
@@ -166,15 +165,16 @@ export function DeckListPanel({ initialDecks }: { initialDecks: DeckDto[] }) {
                 >
                   Editar
                 </Button>
-                <ActionIcon
+                <Button
                   variant="subtle"
                   color="red"
+                  size="compact-sm"
                   aria-label={`Excluir ${deck.name}`}
                   loading={pendingId === deck.id}
                   onClick={() => onDelete(deck.id)}
                 >
-                  <span className="text-xs font-semibold">Excluir</span>
-                </ActionIcon>
+                  Excluir
+                </Button>
               </Group>
             </Group>
           ))}

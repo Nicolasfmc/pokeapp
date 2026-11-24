@@ -4,7 +4,6 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ActionIcon,
   Button,
   Group,
   NumberInput,
@@ -14,6 +13,7 @@ import {
   TextInput,
   Title,
   Badge,
+  SimpleGrid,
 } from "@mantine/core";
 import type { FormatOption, TournamentListItemDto } from "./types";
 
@@ -170,7 +170,7 @@ export function TournamentListPanel({
           className="rounded-xl border border-[var(--poke-line)] bg-[var(--poke-panel)]/80 px-4 py-4"
         >
           <Text fw={600}>Novo torneio</Text>
-          <Group grow align="flex-start">
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
             <TextInput
               label="Nome"
               required
@@ -183,8 +183,8 @@ export function TournamentListPanel({
               value={date}
               onChange={(e) => setDate(e.currentTarget.value)}
             />
-          </Group>
-          <Group grow align="flex-start">
+          </SimpleGrid>
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
             <TextInput
               label="Local"
               value={location}
@@ -197,8 +197,8 @@ export function TournamentListPanel({
               value={formatId}
               onChange={setFormatId}
             />
-          </Group>
-          <Group grow align="flex-start">
+          </SimpleGrid>
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
             <NumberInput
               label="Colocação"
               min={1}
@@ -215,7 +215,7 @@ export function TournamentListPanel({
                 setParticipantCount(typeof value === "number" ? value : "")
               }
             />
-          </Group>
+          </SimpleGrid>
           <Group justify="flex-end">
             <Button type="submit" loading={pending}>
               Criar torneio
@@ -279,15 +279,16 @@ export function TournamentListPanel({
                 >
                   Abrir
                 </Button>
-                <ActionIcon
+                <Button
                   variant="subtle"
                   color="red"
+                  size="compact-sm"
                   aria-label={`Excluir ${tournament.name}`}
                   loading={pendingId === tournament.id}
                   onClick={() => void onDelete(tournament.id)}
                 >
-                  <span className="text-xs font-semibold">Excluir</span>
-                </ActionIcon>
+                  Excluir
+                </Button>
               </Group>
             </Group>
           ))}

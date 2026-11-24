@@ -107,7 +107,7 @@ export function CardsSearchFilters({
           value={q}
           onChange={(event) => setQ(event.currentTarget.value)}
         />
-        <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="md">
+        <SimpleGrid cols={{ base: 2, md: 3 }} spacing="sm" verticalSpacing="sm">
           <Select
             label="Set"
             placeholder="Todos os sets"

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ActionIcon,
   Badge,
   Button,
   Group,
@@ -14,6 +13,7 @@ import {
   Text,
   TextInput,
   Title,
+  SimpleGrid,
 } from "@mantine/core";
 import type {
   AttachableMatchDto,
@@ -354,7 +354,7 @@ export function TournamentDetailPanel({
           className="rounded-xl border border-[var(--poke-line)] bg-[var(--poke-panel)]/80 px-4 py-4"
         >
           <Text fw={600}>Dados do torneio</Text>
-          <Group grow align="flex-start">
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
             <TextInput
               label="Nome"
               required
@@ -367,8 +367,8 @@ export function TournamentDetailPanel({
               value={date}
               onChange={(e) => setDate(e.currentTarget.value)}
             />
-          </Group>
-          <Group grow align="flex-start">
+          </SimpleGrid>
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
             <TextInput
               label="Local"
               value={location}
@@ -381,8 +381,8 @@ export function TournamentDetailPanel({
               value={formatId}
               onChange={setFormatId}
             />
-          </Group>
-          <Group grow align="flex-start">
+          </SimpleGrid>
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
             <NumberInput
               label="Colocação"
               min={1}
@@ -399,7 +399,7 @@ export function TournamentDetailPanel({
                 setParticipantCount(typeof value === "number" ? value : "")
               }
             />
-          </Group>
+          </SimpleGrid>
           <Group justify="flex-end">
             <Button type="submit" loading={pending}>
               Salvar
@@ -417,7 +417,7 @@ export function TournamentDetailPanel({
           <Text size="sm" c="dimmed">
             Só partidas sem torneio. O battle log não é reimportado — apenas o vínculo TournamentMatch.
           </Text>
-          <Group grow align="flex-end">
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md" className="items-end">
             <Select
               label="Partida"
               searchable
@@ -438,7 +438,7 @@ export function TournamentDetailPanel({
             <Button type="submit" loading={pending} disabled={!matchId}>
               Anexar
             </Button>
-          </Group>
+          </SimpleGrid>
         </Stack>
       </form>
 
@@ -497,15 +497,16 @@ export function TournamentDetailPanel({
                     void onUpdateRound(linked, next);
                   }}
                 />
-                <ActionIcon
+                <Button
                   variant="subtle"
                   color="red"
+                  size="compact-sm"
                   aria-label="Desvincular partida"
                   disabled={pending}
                   onClick={() => void onDetach(linked)}
                 >
-                  <span className="text-xs font-semibold">Remover</span>
-                </ActionIcon>
+                  Remover
+                </Button>
               </Group>
             </Group>
           ))

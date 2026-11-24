@@ -129,7 +129,7 @@ export function InventoryCheckTable({ check }: { check: InventoryCheckResult }) 
             <Table.Tr>
               <Table.Th>Carta</Table.Th>
               <Table.Th className="text-right">Possuídas</Table.Th>
-              <Table.Th className="text-right">Livres</Table.Th>
+              <Table.Th className="hidden text-right sm:table-cell">Livres</Table.Th>
               <Table.Th>Status</Table.Th>
             </Table.Tr>
           </Table.Thead>
@@ -147,7 +147,9 @@ export function InventoryCheckTable({ check }: { check: InventoryCheckResult }) 
                 <Table.Td className="text-right">
                   {Math.min(line.owned, 99)}/{line.required}
                 </Table.Td>
-                <Table.Td className="text-right">{line.freeForDeck}</Table.Td>
+                <Table.Td className="hidden text-right sm:table-cell">
+                  {line.freeForDeck}
+                </Table.Td>
                 <Table.Td>
                   <Badge color={STATUS_COLOR[line.status]} variant="light" size="sm">
                     {line.status}

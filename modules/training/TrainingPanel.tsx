@@ -13,6 +13,7 @@ import {
   Textarea,
   TextInput,
   Title,
+  SimpleGrid,
 } from "@mantine/core";
 import type { BattleLogPreview } from "@/server/services/match";
 import type {
@@ -371,7 +372,7 @@ export function TrainingPanel({
             required
             styles={{ input: { fontFamily: "var(--font-ibm-plex-mono)" } }}
           />
-          <Group grow align="flex-start" className="flex-wrap">
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
             <TextInput
               label="Seu nome no TCG Live"
               description="Necessário para WIN/LOSS e FIRST/SECOND"
@@ -391,7 +392,7 @@ export function TrainingPanel({
               nothingFoundMessage="Nenhum deck"
               required
             />
-          </Group>
+          </SimpleGrid>
           {!preview ? (
             <Group>
               <Button onClick={onAnalyze} loading={pending} disabled={!rawLog.trim()}>
@@ -427,7 +428,7 @@ export function TrainingPanel({
                   ? `Arquétipo sugerido: ${preview.suggestedArchetype.name} (revise abaixo)`
                   : "Sem sugestão automática: selecione ou crie o arquétipo."}
               </Text>
-              <Group grow align="flex-start" className="flex-wrap">
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
                 <Select
                   label="Resultado"
                   data={RESULT_OPTIONS}
@@ -441,10 +442,10 @@ export function TrainingPanel({
                   onChange={setReviewTurnOrder}
                   clearable
                 />
-              </Group>
+              </SimpleGrid>
             </Stack>
           )}
-          <Group grow align="flex-start" className="flex-wrap">
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
             <Select
               label="Arquétipo do oponente"
               data={archetypeOptions}
@@ -462,8 +463,8 @@ export function TrainingPanel({
                 setNewArchetypeName(event.currentTarget.value)
               }
             />
-          </Group>
-          <Group grow align="flex-start" className="flex-wrap">
+          </SimpleGrid>
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
             <TextInput
               type="datetime-local"
               label="Jogada em (opcional)"
@@ -475,7 +476,7 @@ export function TrainingPanel({
               value={notes}
               onChange={(event) => setNotes(event.currentTarget.value)}
             />
-          </Group>
+          </SimpleGrid>
           <Text size="xs" c="dimmed">
             gameFormatCode do log (ex.: TEF-PBL) é preservado e não é o Format
             interno do deck.
@@ -582,7 +583,7 @@ export function TrainingPanel({
                     gap="sm"
                     className="rounded-lg border border-[var(--poke-line)] bg-[var(--poke-bg)]/40 px-3 py-3"
                   >
-                    <Group grow>
+                    <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
                       <Select
                         label="Deck"
                         data={deckOptions}
@@ -598,8 +599,8 @@ export function TrainingPanel({
                         searchable
                         clearable
                       />
-                    </Group>
-                    <Group grow>
+                    </SimpleGrid>
+                    <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
                       <Select
                         label="Resultado"
                         data={RESULT_OPTIONS}
@@ -613,7 +614,7 @@ export function TrainingPanel({
                         onChange={setEditTurnOrder}
                         clearable
                       />
-                    </Group>
+                    </SimpleGrid>
                     <TextInput
                       label="Notas"
                       value={editNotes}
