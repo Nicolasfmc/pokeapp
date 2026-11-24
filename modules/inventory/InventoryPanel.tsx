@@ -311,7 +311,7 @@ export function InventoryPanel({
         >
           Inventory
         </Title>
-        <Text className="mt-2 max-w-2xl text-[color-mix(in_srgb,var(--poke-ink)_75%,transparent)]">
+        <Text className="mt-2 max-w-2xl text-[color-mix(in_srgb,var(--sb-ink)_75%,transparent)]">
           Controle cópias físicas por impressão, condição e status. Reserva
           competitiva e disponibilidade para trade são calculadas por carta
           lógica.
@@ -332,7 +332,7 @@ export function InventoryPanel({
       <Paper
         p="md"
         radius="md"
-        className="border border-[var(--poke-line)] bg-[var(--poke-panel)]"
+        className="border border-[var(--sb-line)] bg-[var(--sb-panel)]"
       >
         <form onSubmit={onAdd}>
           <Stack gap="sm">
@@ -443,14 +443,14 @@ export function InventoryPanel({
                 type="button"
                 onClick={() => setOpenGroupKey(group.key)}
                 aria-label={`Abrir ${group.name}`}
-                className="group min-w-0 cursor-pointer border-0 bg-transparent p-0 text-left text-[var(--poke-ink)] transition-transform hover:-translate-y-0.5"
+                className="group min-w-0 cursor-pointer border-0 bg-transparent p-0 text-left text-[var(--sb-ink)] transition-transform hover:-translate-y-0.5"
               >
                 <CardImage
                   src={group.imageUrl}
                   alt={group.name}
                   dimmed={group.quantity === 0}
                   sizes="(max-width: 640px) 30vw, 150px"
-                  className="group-hover:ring-2 group-hover:ring-[var(--poke-accent)]"
+                  className="group-hover:ring-2 group-hover:ring-[var(--sb-accent)]"
                 >
                   <span className="absolute bottom-1 left-1/2 min-w-8 -translate-x-1/2 rounded-full bg-black/75 px-2 py-0.5 text-center text-sm font-bold text-white shadow">
                     ×{group.quantity}
@@ -514,7 +514,7 @@ export function InventoryPanel({
                 key={item.id}
                 p="sm"
                 radius="md"
-                className="border border-[var(--poke-line)] bg-[var(--poke-panel)]"
+                className="border border-[var(--sb-line)] bg-[var(--sb-panel)]"
               >
                 <div className="flex items-start gap-3">
                   <CardThumb
@@ -580,7 +580,7 @@ export function InventoryPanel({
                   </Button>
                 </Group>
                 {historyItemId === item.id ? (
-                  <Stack gap={2} mt="xs" className="border-t border-[var(--poke-line)] pt-2">
+                  <Stack gap={2} mt="xs" className="border-t border-[var(--sb-line)] pt-2">
                     {historyLoading ? (
                       <Text size="xs" c="dimmed">
                         Carregando…
@@ -597,7 +597,7 @@ export function InventoryPanel({
                             {tx.quantityDelta} {tx.reason}
                             {tx.note ? ` — ${tx.note}` : ""}
                           </span>
-                          <span className="shrink-0 text-[color-mix(in_srgb,var(--poke-ink)_55%,transparent)]">
+                          <span className="shrink-0 text-[color-mix(in_srgb,var(--sb-ink)_55%,transparent)]">
                             {new Date(tx.createdAt).toLocaleString("pt-BR")}
                           </span>
                         </div>

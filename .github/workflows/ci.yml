@@ -14,16 +14,16 @@ jobs:
         env:
           POSTGRES_USER: ci
           POSTGRES_PASSWORD: ci
-          POSTGRES_DB: pokeapp
+          POSTGRES_DB: sleevebuild
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U ci -d pokeapp"
+          --health-cmd "pg_isready -U ci -d sleevebuild"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
     env:
-      DATABASE_URL: postgresql://ci:ci@localhost:5432/pokeapp?schema=public
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/sleevebuild?schema=public
       AUTH_SECRET: ci-only-not-a-secret
     steps:
       - uses: actions/checkout@v4

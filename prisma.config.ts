@@ -12,6 +12,6 @@ export default defineConfig({
   datasource: {
     url:
       process.env.DATABASE_URL ??
-      "postgresql://USER:PASSWORD@localhost:5432/pokeapp?schema=public",
+      "postgresql://USER:PASSWORD@localhost:5432/sleevebuild?schema=public",
   },
 });

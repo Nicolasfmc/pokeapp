@@ -17,7 +17,7 @@ export function CardPrintingDetail({ printing }: CardPrintingDetailProps) {
         <div>
           <Link
             href="/cards"
-            className="text-sm text-[color-mix(in_srgb,var(--poke-ink)_55%,transparent)] no-underline hover:text-[var(--poke-accent)]"
+            className="text-sm text-[color-mix(in_srgb,var(--sb-ink)_55%,transparent)] no-underline hover:text-[var(--sb-accent)]"
           >
             ← Voltar à busca
           </Link>
@@ -35,7 +35,7 @@ export function CardPrintingDetail({ printing }: CardPrintingDetailProps) {
         </div>
 
         <div className="grid gap-8 md:grid-cols-[minmax(0,280px)_1fr]">
-          <div className="relative aspect-[63/88] overflow-hidden rounded-2xl bg-[color-mix(in_srgb,var(--poke-mist)_45%,transparent)] ring-1 ring-[var(--poke-line)]">
+          <div className="relative aspect-[63/88] overflow-hidden rounded-2xl bg-[color-mix(in_srgb,var(--sb-mist)_45%,transparent)] ring-1 ring-[var(--sb-line)]">
             {printing.imageUrl ? (
               <Image
                 src={printing.imageUrl}
@@ -46,7 +46,7 @@ export function CardPrintingDetail({ printing }: CardPrintingDetailProps) {
                 priority
               />
             ) : (
-              <div className="flex h-full items-center justify-center text-sm text-[color-mix(in_srgb,var(--poke-ink)_55%,transparent)]">
+              <div className="flex h-full items-center justify-center text-sm text-[color-mix(in_srgb,var(--sb-ink)_55%,transparent)]">
                 Sem imagem
               </div>
             )}
@@ -107,7 +107,7 @@ export function CardPrintingDetail({ printing }: CardPrintingDetailProps) {
               {set ? (
                 <Link
                   href={`/cards/sets/${set.id}`}
-                  className="text-sm font-semibold text-[var(--poke-accent)] no-underline hover:underline"
+                  className="text-sm font-semibold text-[var(--sb-accent)] no-underline hover:underline"
                 >
                   Ver set
                 </Link>
@@ -115,7 +115,7 @@ export function CardPrintingDetail({ printing }: CardPrintingDetailProps) {
               {logical ? (
                 <Link
                   href={`/cards/logical/${logical.id}`}
-                  className="text-sm font-semibold text-[var(--poke-accent)] no-underline hover:underline"
+                  className="text-sm font-semibold text-[var(--sb-accent)] no-underline hover:underline"
                 >
                   Carta lógica
                 </Link>

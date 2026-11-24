@@ -16,7 +16,7 @@ export function CardPrintingThumb({ printing, href }: CardPrintingThumbProps) {
   return (
     <Link
       href={destination}
-      className="group flex flex-col gap-2 no-underline text-[var(--poke-ink)] transition-transform hover:-translate-y-0.5"
+      className="group flex flex-col gap-2 no-underline text-[var(--sb-ink)] transition-transform hover:-translate-y-0.5"
     >
       <CardImage
         src={printing.imageUrl}

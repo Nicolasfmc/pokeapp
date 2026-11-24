@@ -29,7 +29,7 @@ export function CardsSearchView({ initialSets, result }: CardsSearchViewProps) {
           >
             Cards
           </Title>
-          <Text className="mt-2 max-w-2xl text-[color-mix(in_srgb,var(--poke-ink)_75%,transparent)]">
+          <Text className="mt-2 max-w-2xl text-[color-mix(in_srgb,var(--sb-ink)_75%,transparent)]">
             Cartas iguais (reprints e artes alternativas) aparecem unificadas;
             clique numa carta para escolher uma impressão específica.
           </Text>
@@ -47,7 +47,7 @@ export function CardsSearchView({ initialSets, result }: CardsSearchViewProps) {
               <Link
                 key={logical.id}
                 href={`/cards/logical/${logical.id}`}
-                className="group flex flex-col gap-2 no-underline text-[var(--poke-ink)] transition-transform hover:-translate-y-0.5"
+                className="group flex flex-col gap-2 no-underline text-[var(--sb-ink)] transition-transform hover:-translate-y-0.5"
                 title="Ver todas as impressões"
               >
                 <CardImage
@@ -91,7 +91,7 @@ export function CardsSearchView({ initialSets, result }: CardsSearchViewProps) {
               <Link
                 key={set.id}
                 href={`/cards/sets/${set.id}`}
-                className="rounded-xl px-3 py-3 no-underline text-[var(--poke-ink)] ring-1 ring-[var(--poke-line)] transition-colors hover:bg-[color-mix(in_srgb,var(--poke-panel)_90%,var(--poke-accent-soft))]"
+                className="rounded-xl px-3 py-3 no-underline text-[var(--sb-ink)] ring-1 ring-[var(--sb-line)] transition-colors hover:bg-[color-mix(in_srgb,var(--sb-panel)_90%,var(--sb-accent-soft))]"
               >
                 <Text fw={600} size="sm">
                   {set.name}

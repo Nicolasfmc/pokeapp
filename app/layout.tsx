@@ -27,8 +27,8 @@ const mono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "PokeApp",
-    template: "%s · PokeApp",
+    default: "SleeveBuild",
+    template: "%s · SleeveBuild",
   },
   description:
     "Coleção, decks, inventário e treinamento para Pokémon TCG competitivo.",

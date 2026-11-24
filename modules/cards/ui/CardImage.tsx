@@ -27,7 +27,7 @@ export function CardImage({
   const url = cardImageSize(src, size);
   return (
     <div
-      className={`relative aspect-[63/88] overflow-hidden rounded-[4.5%/3.2%] bg-[color-mix(in_srgb,var(--poke-mist)_55%,transparent)] ring-1 ring-[var(--poke-line)] ${className}`}
+      className={`relative aspect-[63/88] overflow-hidden rounded-[4.5%/3.2%] bg-[color-mix(in_srgb,var(--sb-mist)_55%,transparent)] ring-1 ring-[var(--sb-line)] ${className}`}
     >
       {url ? (
         <Image
@@ -38,7 +38,7 @@ export function CardImage({
           className={`object-cover ${dimmed ? "opacity-40 grayscale" : ""}`}
         />
       ) : (
-        <div className="flex h-full items-center justify-center p-2 text-center text-xs leading-tight text-[color-mix(in_srgb,var(--poke-ink)_65%,transparent)]">
+        <div className="flex h-full items-center justify-center p-2 text-center text-xs leading-tight text-[color-mix(in_srgb,var(--sb-ink)_65%,transparent)]">
           {alt}
         </div>
       )}
@@ -65,7 +65,7 @@ export function CardArt({
     <div
       role="img"
       aria-label={alt}
-      className={`aspect-[3/2] overflow-hidden bg-[color-mix(in_srgb,var(--poke-mist)_70%,transparent)] bg-no-repeat ${className}`}
+      className={`aspect-[3/2] overflow-hidden bg-[color-mix(in_srgb,var(--sb-mist)_70%,transparent)] bg-no-repeat ${className}`}
       style={
         url
           ? {

@@ -4,7 +4,7 @@ Objetivo: evitar conflitos de merge quando vários agentes trabalham ao mesmo te
 Cada workstream (WS) só edita as pastas/prefixos da coluna **Pode tocar**. Cruzar ownership exige acordo explícito.
 
 Contratos compartilhados: [contracts.md](./contracts.md).  
-Spec: [PokeApp-Product-Technical-Specification-v0.1.md](./PokeApp-Product-Technical-Specification-v0.1.md).
+Spec: [SleeveBuild-Product-Technical-Specification-v0.1.md](./SleeveBuild-Product-Technical-Specification-v0.1.md).
 
 ---
 

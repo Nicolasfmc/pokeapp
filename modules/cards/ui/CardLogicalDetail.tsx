@@ -14,7 +14,7 @@ export function CardLogicalDetail({ logical }: CardLogicalDetailProps) {
         <div>
           <Link
             href="/cards"
-            className="text-sm text-[color-mix(in_srgb,var(--poke-ink)_55%,transparent)] no-underline hover:text-[var(--poke-accent)]"
+            className="text-sm text-[color-mix(in_srgb,var(--sb-ink)_55%,transparent)] no-underline hover:text-[var(--sb-accent)]"
           >
             ← Voltar à busca
           </Link>
@@ -33,7 +33,7 @@ export function CardLogicalDetail({ logical }: CardLogicalDetailProps) {
               {logical.printings.length} impressão(ões)
             </Text>
           </div>
-          <Text mt="sm" className="max-w-2xl text-[color-mix(in_srgb,var(--poke-ink)_75%,transparent)]">
+          <Text mt="sm" className="max-w-2xl text-[color-mix(in_srgb,var(--sb-ink)_75%,transparent)]">
             Todas as impressões desta carta (reprints e artes alternativas).
             Escolha uma impressão específica para ver detalhes. Decks usam a
             carta unificada; o inventário guarda a impressão.

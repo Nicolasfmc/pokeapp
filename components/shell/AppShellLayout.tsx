@@ -36,7 +36,7 @@ export function AppShellLayout({ children }: { children: React.ReactNode }) {
       padding="md"
       className="min-h-screen"
     >
-      <AppShell.Header className="border-b border-[var(--poke-line)] bg-[var(--poke-header)]/90 backdrop-blur-md">
+      <AppShell.Header className="border-b border-[var(--sb-line)] bg-[var(--sb-header)]/90 backdrop-blur-md">
         <Group h="100%" px="md" justify="space-between">
           <Group gap="sm">
             <Burger
@@ -49,16 +49,16 @@ export function AppShellLayout({ children }: { children: React.ReactNode }) {
             <Text
               component={Link}
               href="/"
-              className="font-[family-name:var(--font-space-grotesk)] text-xl font-bold tracking-tight text-[var(--poke-ink)] no-underline"
+              className="font-[family-name:var(--font-space-grotesk)] text-xl font-bold tracking-tight text-[var(--sb-ink)] no-underline"
             >
-              PokeApp
+              SleeveBuild
             </Text>
           </Group>
           <ColorSchemeToggle />
         </Group>
       </AppShell.Header>
 
-      <AppShell.Navbar className="border-r border-[var(--poke-line)] bg-[var(--poke-nav)]">
+      <AppShell.Navbar className="border-r border-[var(--sb-line)] bg-[var(--sb-nav)]">
         <AppShell.Section grow>
           <AppNav onNavigate={close} />
         </AppShell.Section>

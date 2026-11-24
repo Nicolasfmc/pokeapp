@@ -14,7 +14,7 @@ export function PlaceholderPage({ title, description }: PlaceholderPageProps) {
       >
         {title}
       </Title>
-      <Text className="mt-3 max-w-2xl text-[color-mix(in_srgb,var(--poke-ink)_75%,transparent)]">
+      <Text className="mt-3 max-w-2xl text-[color-mix(in_srgb,var(--sb-ink)_75%,transparent)]">
         {description}
       </Text>
     </section>

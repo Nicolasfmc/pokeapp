@@ -57,7 +57,7 @@ function ImportReportView({ report, onReset }: { report: ImportReport; onReset: 
   const total = report.resolvedCount + report.unresolvedCount;
   const status = report.deck.importStatus ?? "IMPORTED";
   return (
-    <Stack gap="lg" className="max-w-4xl animate-[poke-rise_0.45s_ease-out]">
+    <Stack gap="lg" className="max-w-4xl animate-[sb-rise_0.45s_ease-out]">
       <div>
         <Group gap="sm">
           <Title order={2}>Importação: {report.deck.name}</Title>
@@ -114,7 +114,7 @@ function ImportReportView({ report, onReset }: { report: ImportReport; onReset: 
 
       <Stack
         gap="xs"
-        className="rounded-xl border border-[var(--poke-line)] bg-[var(--poke-panel)]/85 p-4"
+        className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/85 p-4"
       >
         <Group gap="sm">
           <Text fw={700}>Validação de formato ({report.deck.format.name})</Text>
@@ -136,7 +136,7 @@ function ImportReportView({ report, onReset }: { report: ImportReport; onReset: 
 
       <Stack
         gap="sm"
-        className="rounded-xl border border-[var(--poke-line)] bg-[var(--poke-panel)]/85 p-4"
+        className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/85 p-4"
       >
         <Text fw={700}>Inventory Check</Text>
         <InventoryCheckTable check={report.inventoryCheck} />
@@ -263,7 +263,7 @@ export function DeckImportPanel() {
   }
 
   return (
-    <Stack gap="lg" className="max-w-3xl animate-[poke-rise_0.45s_ease-out]">
+    <Stack gap="lg" className="max-w-3xl animate-[sb-rise_0.45s_ease-out]">
       <div>
         <Title order={2}>Importar Limitless</Title>
         <Text c="dimmed" size="sm" mt={4}>
@@ -275,7 +275,7 @@ export function DeckImportPanel() {
       <form onSubmit={onSubmit}>
         <Stack
           gap="md"
-          className="rounded-xl border border-[var(--poke-line)] bg-[var(--poke-panel)]/85 p-5"
+          className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/85 p-5"
         >
           {error ? <Alert color="red">{error}</Alert> : null}
 

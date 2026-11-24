@@ -1,4 +1,4 @@
-# PokeApp
+# SleeveBuild
 ## Product & Technical Specification — v0.1
 
 **Status:** Draft  
@@ -11,7 +11,7 @@
 
 # 1. Visão geral
 
-O PokeApp será uma plataforma web para jogadores de Pokémon TCG que centraliza três necessidades atualmente distribuídas entre diferentes ferramentas:
+O SleeveBuild será uma plataforma web para jogadores de Pokémon TCG que centraliza três necessidades atualmente distribuídas entre diferentes ferramentas:
 
 1. **Construção e gerenciamento de decks**
 2. **Gerenciamento físico de cartas e coleção**
@@ -52,7 +52,7 @@ Criar um único aplicativo para que um jogador competitivo possa:
 
 ---
 
-# 3. Problemas que o PokeApp resolve
+# 3. Problemas que o SleeveBuild resolve
 
 Atualmente, informações relevantes ficam separadas:
 
@@ -74,10 +74,10 @@ Estatísticas
 Controle manual
 ```
 
-O PokeApp pretende transformar isso em:
+O SleeveBuild pretende transformar isso em:
 
 ```text
-                    PokeApp
+                    SleeveBuild
                        │
        ┌───────────────┼────────────────┐
        │               │                │
@@ -95,7 +95,7 @@ O PokeApp pretende transformar isso em:
 
 ## 4.1 Uma única fonte operacional
 
-O PostgreSQL será a fonte operacional de verdade do PokeApp.
+O PostgreSQL será a fonte operacional de verdade do SleeveBuild.
 
 Fontes externas, como TCGdex, serão utilizadas para sincronização.
 
@@ -132,7 +132,7 @@ Synchronization
    ↓
 PostgreSQL
    ↓
-PokeApp
+SleeveBuild
 ```
 
 ---
@@ -250,7 +250,7 @@ O frontend apenas apresenta e solicita operações.
 Não serão implementados inicialmente:
 
 - marketplace;
-- venda diretamente dentro do PokeApp;
+- venda diretamente dentro do SleeveBuild;
 - sistema de pagamentos;
 - preços cadastrados;
 - integração com Liga;
@@ -360,7 +360,7 @@ A TCGdex fornece:
 - variantes;
 - idiomas.
 
-A integração deve ocorrer através de uma camada própria do PokeApp.
+A integração deve ocorrer através de uma camada própria do SleeveBuild.
 
 ---
 
@@ -1124,7 +1124,7 @@ Ao excluir ou arquivar um deck Sleevado:
 
 # 45. Transferência entre decks
 
-O PokeApp deverá suportar transferência de cartas físicas entre decks.
+O SleeveBuild deverá suportar transferência de cartas físicas entre decks.
 
 Cenário:
 
@@ -1233,7 +1233,7 @@ O fluxo deve permitir transferência de cartas quando necessário.
 
 # 50. Importação de decks Limitless
 
-O PokeApp aceitará o formato fornecido pelo Limitless.
+O SleeveBuild aceitará o formato fornecido pelo Limitless.
 
 Exemplo:
 
@@ -1442,7 +1442,7 @@ OWNED
 
 O módulo Training utilizará como fonte principal os logs exportados pelo Pokémon TCG Live.
 
-O Training Court é uma referência funcional, mas o PokeApp terá seu próprio modelo.
+O Training Court é uma referência funcional, mas o SleeveBuild terá seu próprio modelo.
 
 ---
 
@@ -1557,7 +1557,7 @@ Esse valor deve ser preservado.
 
 Não devemos assumir imediatamente que o código possui o mesmo significado dos formatos internos do Deckbuilder.
 
-O PokeApp terá:
+O SleeveBuild terá:
 
 ```text
 GameFormatCode
@@ -1573,7 +1573,7 @@ O Match deve apontar para um `Deck`.
 
 No beta, o usuário poderá selecionar manualmente qual deck utilizou.
 
-Futuramente o PokeApp poderá sugerir automaticamente um deck baseado nas cartas identificadas no log.
+Futuramente o SleeveBuild poderá sugerir automaticamente um deck baseado nas cartas identificadas no log.
 
 ---
 
@@ -2758,7 +2758,7 @@ A política definitiva de uso/distribuição de assets deverá ser revisada ante
 
 # 124. Preços
 
-O PokeApp não armazenará preços no MVP.
+O SleeveBuild não armazenará preços no MVP.
 
 O preço de uma eventual venda será verificado externamente no momento da operação.
 
@@ -3201,10 +3201,10 @@ Essa separação deve evitar que conceitos diferentes sejam misturados no mesmo 
 
 # 133. Visão final do produto
 
-O PokeApp deverá evoluir para:
+O SleeveBuild deverá evoluir para:
 
 ```text
-                         PokeApp
+                         SleeveBuild
                             │
         ┌───────────────────┼────────────────────┐
         │                   │                    │
@@ -3240,4 +3240,4 @@ E todos os módulos utilizam uma base comum:
 
 O objetivo não é apenas reproduzir Limitless + Training Court + uma coleção de cartas em um único site.
 
-O diferencial estrutural do PokeApp é conectar **a carta lógica, a carta física, o deck físico e o desempenho do jogador** em um único modelo de dados.
+O diferencial estrutural do SleeveBuild é conectar **a carta lógica, a carta física, o deck físico e o desempenho do jogador** em um único modelo de dados.
