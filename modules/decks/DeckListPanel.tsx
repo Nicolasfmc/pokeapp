@@ -10,7 +10,6 @@ import {
   Stack,
   Text,
   Title,
-  ActionIcon,
 } from "@mantine/core";
 import type { DeckDto } from "./types";
 
@@ -38,13 +37,29 @@ export function DeckListPanel({ initialDecks }: { initialDecks: DeckDto[] }) {
     setPendingId(deckId);
     try {
       const response = await fetch(`/api/decks/${deckId}`, { method: "DELETE" });
-      const data = (await response.json()) as { error?: string };
+      const data = (await response.json()) as { error?: string; archived?: boolean };
       if (!response.ok) {
         setError(data.error ?? "Falha ao excluir deck.");
         setPendingId(null);
         return;
       }
-      setDecks((prev) => prev.filter((d) => d.id !== deckId));
+      if (data.archived) {
+        // Deck com partidas registradas é arquivado, não apagado (§114).
+        setDecks((prev) =>
+          prev.map((d) =>
+            d.id === deckId
+              ? {
+                  ...d,
+                  physicalStatus: "NOT_SLEEVED",
+                  tags: d.tags.includes("ARCHIVED") ? d.tags : [...d.tags, "ARCHIVED"],
+                }
+              : d,
+          ),
+        );
+        setError("Deck possui partidas registradas e foi arquivado em vez de excluído.");
+      } else {
+        setDecks((prev) => prev.filter((d) => d.id !== deckId));
+      }
       setPendingId(null);
       startTransition(() => router.refresh());
     } catch {
@@ -150,15 +165,16 @@ export function DeckListPanel({ initialDecks }: { initialDecks: DeckDto[] }) {
                 >
                   Editar
                 </Button>
-                <ActionIcon
+                <Button
                   variant="subtle"
                   color="red"
+                  size="compact-sm"
                   aria-label={`Excluir ${deck.name}`}
                   loading={pendingId === deck.id}
                   onClick={() => onDelete(deck.id)}
                 >
-                  <span className="text-xs font-semibold">Excluir</span>
-                </ActionIcon>
+                  Excluir
+                </Button>
               </Group>
             </Group>
           ))}

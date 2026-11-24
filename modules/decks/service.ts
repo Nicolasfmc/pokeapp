@@ -20,6 +20,10 @@ import {
   clearDeckAllocations,
   lockDeckRow,
 } from "@/server/services/allocation";
+import {
+  getDeckInventoryCheck,
+  type InventoryCheckResult,
+} from "@/server/services/inventory-check";
 
 import type { DeckCardDto, DeckDto, UnresolvedImportLine } from "./types";
 
@@ -42,6 +46,7 @@ const TAG_VALUES = new Set<string>(Object.values(DeckTagName));
 export type ImportDeckResult = {
   deck: DeckDto;
   validation: DeckValidationResult;
+  inventoryCheck: InventoryCheckResult;
   resolvedCount: number;
   unresolvedCount: number;
   unresolved: UnresolvedImportLine[];
@@ -406,8 +411,15 @@ export async function updateDeck(
 
   const tags =
     input.tags !== undefined ? parseTags(input.tags) : undefined;
+  const archiving = Boolean(tags?.includes(DeckTagName.ARCHIVED));
 
   const deck = await prisma.$transaction(async (tx) => {
+    if (archiving) {
+      // §44: arquivar um deck Sleevado libera as alocações; Inventory intacto.
+      await lockDeckRow(tx, userId, deckId);
+      await clearDeckAllocations(tx, deckId);
+      data.physicalStatus = PhysicalStatus.NOT_SLEEVED;
+    }
     await tx.deck.update({
       where: { id: deckId },
       data,
@@ -424,12 +436,33 @@ export async function updateDeck(
   return toDeckDto(deck);
 }
 
-export async function deleteDeck(userId: string, deckId: string): Promise<void> {
+/**
+ * §44 / §114: libera alocações e remove o deck. Se o deck já tem partidas
+ * registradas, ele é arquivado (tag ARCHIVED) para preservar o histórico.
+ */
+export async function deleteDeck(
+  userId: string,
+  deckId: string,
+): Promise<{ archived: boolean }> {
   await getOwnedDeck(userId, deckId);
-  await prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx) => {
     await lockDeckRow(tx, userId, deckId);
     await clearDeckAllocations(tx, deckId);
+    const matchCount = await tx.match.count({ where: { deckId } });
+    if (matchCount > 0) {
+      await tx.deck.update({
+        where: { id: deckId },
+        data: { physicalStatus: PhysicalStatus.NOT_SLEEVED },
+      });
+      await tx.deckTag.upsert({
+        where: { deckId_tag: { deckId, tag: DeckTagName.ARCHIVED } },
+        create: { deckId, tag: DeckTagName.ARCHIVED },
+        update: {},
+      });
+      return { archived: true };
+    }
     await tx.deck.delete({ where: { id: deckId } });
+    return { archived: false };
   });
 }
 
@@ -659,9 +692,13 @@ export async function importLimitlessDeck(
     });
   });
 
+  // §55: Parser → Resolver → Format Validator → Inventory Check
+  const inventoryCheck = await getDeckInventoryCheck(userId, deck.id);
+
   return {
     deck: toDeckDto(deck),
     validation,
+    inventoryCheck,
     resolvedCount,
     unresolvedCount,
     unresolved,

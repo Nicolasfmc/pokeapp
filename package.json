@@ -20,6 +20,8 @@
     "@mantine/core": "^7.17.8",
     "@mantine/hooks": "^7.17.8",
     "@mantine/notifications": "^7.17.8",
+    "@neon/config": "^1.14.6",
+    "@neon/env": "^2.1.9",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "@tcgdex/sdk": "^2.9.0",

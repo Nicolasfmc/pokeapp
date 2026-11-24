@@ -37,8 +37,8 @@ export async function DELETE(_request: Request, context: RouteContext) {
   try {
     const user = await requireUser();
     const { id } = await context.params;
-    await deleteDeck(user.id, id);
-    return jsonOk({ ok: true });
+    const result = await deleteDeck(user.id, id);
+    return jsonOk({ ok: true, ...result });
   } catch (error) {
     return handleDeckError(error);
   }

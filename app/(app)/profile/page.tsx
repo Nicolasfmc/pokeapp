@@ -30,6 +30,7 @@ export default async function ProfilePage() {
             ? me.deletionRequestedAt.toISOString()
             : null,
           displayName: me.displayName,
+          bio: me.bio,
           isPublic: me.isPublic,
         }}
       />

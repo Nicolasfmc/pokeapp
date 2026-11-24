@@ -57,7 +57,10 @@ export function DeckCreatePanel() {
         }
         if (!cancelled) {
           setFormats(data.formats ?? []);
-          setFormatId(data.formats?.[0]?.id ?? null);
+          setFormatId(
+            (data.formats?.find((f) => f.code === "STANDARD") ?? data.formats?.[0])?.id ??
+              null,
+          );
           setLoadingFormats(false);
         }
       } catch {

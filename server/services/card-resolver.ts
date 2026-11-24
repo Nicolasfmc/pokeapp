@@ -48,11 +48,18 @@ function namesCompatible(expected: string | undefined, actual: string): boolean 
   return a === b || a.includes(b) || b.includes(a);
 }
 
-function collectorCandidates(collectorNumber: string): string[] {
+/**
+ * Limitless usa "MEE 2"; TCGdex armazena localId "002". Gera as variantes com
+ * e sem zeros à esquerda (até 3 dígitos) para casar os dois lados.
+ */
+export function collectorCandidates(collectorNumber: string): string[] {
   const raw = collectorNumber.trim();
   const stripped = raw.replace(/^0+(?=\d)/, "");
-  const unique = new Set<string>([raw, stripped].filter(Boolean));
-  return [...unique];
+  const candidates = [raw, stripped];
+  if (/^\d+$/.test(stripped)) {
+    candidates.push(stripped.padStart(2, "0"), stripped.padStart(3, "0"));
+  }
+  return [...new Set(candidates.filter(Boolean))];
 }
 
 export async function resolveCardBySetAndCollector(
@@ -70,15 +77,16 @@ export async function resolveCardBySetAndCollector(
     };
   }
 
-  const set = await prisma.cardSet.findFirst({
+  const sets = await prisma.cardSet.findMany({
     where: {
       isActive: true,
       code: { equals: setCode, mode: "insensitive" },
     },
     select: { id: true, code: true },
+    orderBy: { releaseDate: "desc" },
   });
 
-  if (!set) {
+  if (sets.length === 0) {
     return {
       ok: false,
       code: "SET_NOT_FOUND",
@@ -90,13 +98,14 @@ export async function resolveCardBySetAndCollector(
   const localIds = collectorCandidates(collectorNumber);
   const printing = await prisma.cardPrinting.findFirst({
     where: {
-      setId: set.id,
+      setId: { in: sets.map((s) => s.id) },
       isActive: true,
       OR: localIds.map((localId) => ({
         localId: { equals: localId, mode: "insensitive" as const },
       })),
     },
     include: {
+      set: { select: { code: true } },
       logicalCard: {
         select: {
           id: true,
@@ -128,7 +137,7 @@ export async function resolveCardBySetAndCollector(
       logicalCardId: printing.logicalCard.id,
       canonicalName: printing.logicalCard.canonicalName,
       category: printing.logicalCard.category,
-      setCode: set.code,
+      setCode: printing.set.code,
       localId: printing.localId,
       printingName: printing.name,
       nameMatched,

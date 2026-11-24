@@ -85,6 +85,32 @@ describe("parseTcgLiveBattleLog", () => {
     expect(value.going_first_player).toBe("Ayesai");
   });
 
+  it("extrai Pokémon colocados em campo por jogador e o oponente (§67)", () => {
+    const raw = fixture("ayesai-vs-nicolasfmc.txt");
+    const { value } = parseTcgLiveBattleLog(raw, { viewerName: "nicolasfmc" });
+
+    expect(value.opponent).toBe("Ayesai");
+    expect(value.pokemon_by_player.Ayesai).toEqual(["Dreepy"]);
+    // Nest Ball é trainer ("played X." sem destino em campo): não conta.
+    expect(value.pokemon_by_player.nicolasfmc).toEqual([]);
+  });
+
+  it("registra evoluções e ignora jogadores desconhecidos", () => {
+    const raw = [
+      "Alice vs Bob",
+      "Alice played (twm_128) Dreepy to the Active Spot.",
+      "Alice's (twm_128) Dreepy evolved into (twm_129) Drakloak on the Bench.",
+      "Alice's Drakloak evolved into Dragapult ex.",
+      "Bob played Abra to the Bench.",
+      "Carol played Pikachu to the Bench.",
+    ].join("\n");
+    const { value } = parseTcgLiveBattleLog(raw, { viewerName: "Bob" });
+    expect(value.opponent).toBe("Alice");
+    expect(value.pokemon_by_player.Alice).toEqual(["Dreepy", "Drakloak", "Dragapult ex"]);
+    expect(value.pokemon_by_player.Bob).toEqual(["Abra"]);
+    expect(value.pokemon_by_player.Carol).toBeUndefined();
+  });
+
   it("retorna EMPTY_INPUT para log vazio", () => {
     const { ok, value } = parseTcgLiveBattleLog("   ");
     expect(ok).toBe(false);

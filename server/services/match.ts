@@ -11,6 +11,11 @@ import {
   parseTcgLiveBattleLog,
   type StructuredMatchData,
 } from "@/server/parsers";
+import {
+  normalizeDisplayPokemon,
+  suggestArchetype,
+  type ArchetypeSuggestion,
+} from "./archetype-classifier";
 
 export class MatchServiceError extends Error {
   status: number;
@@ -270,7 +275,7 @@ async function resolveArchetypeId(params: {
     const existing = await prisma.archetype.findUnique({ where: { name } });
     if (existing) return existing.id;
     const created = await prisma.archetype.create({
-      data: { name },
+      data: { name, displayPokemon: normalizeDisplayPokemon(undefined, name) },
     });
     return created.id;
   }
@@ -316,17 +321,12 @@ export async function createArchetype(input: {
     );
   }
 
-  const displayPokemon =
-    input.displayPokemon === undefined
-      ? undefined
-      : (input.displayPokemon as Prisma.InputJsonValue);
+  // §69: o arquétipo define os Pokémon usados na apresentação.
+  const displayPokemon = normalizeDisplayPokemon(input.displayPokemon, name);
 
   try {
     const row = await prisma.archetype.create({
-      data: {
-        name,
-        ...(displayPokemon !== undefined ? { displayPokemon } : {}),
-      },
+      data: { name, displayPokemon },
     });
     return toArchetypeDto(row);
   } catch (error) {
@@ -365,10 +365,10 @@ export async function updateArchetype(
     data.name = name;
   }
   if (input.displayPokemon !== undefined) {
-    data.displayPokemon =
-      input.displayPokemon === null
-        ? Prisma.JsonNull
-        : (input.displayPokemon as Prisma.InputJsonValue);
+    data.displayPokemon = normalizeDisplayPokemon(
+      input.displayPokemon,
+      typeof data.name === "string" ? data.name : current.name,
+    );
   }
 
   try {
@@ -415,6 +415,73 @@ export async function getMatch(
     throw new MatchServiceError("Match não encontrado.", 404, "MATCH_NOT_FOUND");
   }
   return toMatchDto(row, { includeStructured: true });
+}
+
+export type BattleLogPreview = {
+  player1: string | null;
+  player2: string | null;
+  viewer: string | null;
+  opponent: string | null;
+  result: PrismaMatchResult;
+  turnOrder: PrismaTurnOrder | null;
+  gameFormatCode: string | null;
+  parserVersion: string;
+  opponentPokemon: string[];
+  viewerPokemon: string[];
+  suggestedArchetype: ArchetypeSuggestion | null;
+  warnings: string[];
+};
+
+/**
+ * §68 — Log → Detected Pokémon → Suggested Archetype → User Review.
+ * Não persiste nada: o usuário revisa antes de salvar.
+ */
+export async function previewBattleLog(input: {
+  rawLog: unknown;
+  viewerName: string;
+}): Promise<BattleLogPreview> {
+  const rawLog = typeof input.rawLog === "string" ? input.rawLog : "";
+  if (!rawLog.trim()) {
+    throw new MatchServiceError("rawLog é obrigatório.", 400, "EMPTY_RAW_LOG");
+  }
+  const parsed = parseTcgLiveBattleLog(rawLog, { viewerName: input.viewerName });
+  const structured = parsed.value;
+  if (structured.errors.some((e) => e.code === "MISSING_PLAYERS")) {
+    throw new MatchServiceError(
+      'Não foi possível extrair "jogador vs oponente" do log.',
+      400,
+      "UNPARSEABLE_LOG",
+    );
+  }
+
+  const opponentPokemon = structured.opponent
+    ? (structured.pokemon_by_player[structured.opponent] ?? [])
+    : [];
+  const viewerPlayer =
+    structured.opponent === structured.player1 ? structured.player2 : structured.player1;
+  const viewerPokemon =
+    structured.opponent && viewerPlayer
+      ? (structured.pokemon_by_player[viewerPlayer] ?? [])
+      : [];
+
+  const archetypes = await prisma.archetype.findMany({
+    select: { id: true, name: true, displayPokemon: true },
+  });
+
+  return {
+    player1: structured.player1,
+    player2: structured.player2,
+    viewer: structured.viewer,
+    opponent: structured.opponent,
+    result: structured.result,
+    turnOrder: structured.turn_order,
+    gameFormatCode: structured.format,
+    parserVersion: structured.parser_version,
+    opponentPokemon,
+    viewerPokemon,
+    suggestedArchetype: suggestArchetype(opponentPokemon, archetypes),
+    warnings: structured.errors.map((e) => e.message),
+  };
 }
 
 export async function importBattleLog(

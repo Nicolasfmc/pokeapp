@@ -7,7 +7,7 @@ function buildPrismaMock() {
   const logicals = new Map<string, { id: string; canonicalName: string; category: string }>();
   const printings = new Map<
     string,
-    { id: string; tcgdexId: string; isActive: boolean; name: string }
+    { id: string; tcgdexId: string; isActive: boolean; name: string; [key: string]: unknown }
   >();
 
   let seq = 1;
@@ -25,11 +25,13 @@ function buildPrismaMock() {
         sets.set(create.tcgdexId, created);
         return created;
       }),
+      findMany: vi.fn(async ({ where }) =>
+        [...sets.values()].filter((s) => where.isActive === undefined || s.isActive === where.isActive),
+      ),
       updateMany: vi.fn(async ({ where, data }) => {
         let count = 0;
         for (const set of sets.values()) {
-          const excluded = where.tcgdexId?.notIn?.includes(set.tcgdexId);
-          if (set.isActive === true && !excluded) {
+          if (where.id?.in?.includes(set.id)) {
             set.isActive = data.isActive;
             count += 1;
           }
@@ -68,20 +70,20 @@ function buildPrismaMock() {
           Object.assign(existing, update, { isActive: true });
           return existing;
         }
-        const created = {
-          id: nextId(),
-          tcgdexId: create.tcgdexId,
-          name: create.name,
-          isActive: true,
-        };
+        const created = { ...create, id: nextId(), isActive: true };
         printings.set(create.tcgdexId, created);
         return created;
       }),
+      findMany: vi.fn(async ({ where }) =>
+        [...printings.values()].filter((p) => {
+          if (where.tcgdexId?.in) return where.tcgdexId.in.includes(p.tcgdexId);
+          return where.isActive === undefined || p.isActive === where.isActive;
+        }),
+      ),
       updateMany: vi.fn(async ({ where, data }) => {
         let count = 0;
         for (const printing of printings.values()) {
-          const excluded = where.tcgdexId?.notIn?.includes(printing.tcgdexId);
-          if (printing.isActive === true && !excluded) {
+          if (where.id?.in?.includes(printing.id)) {
             printing.isActive = data.isActive;
             count += 1;
           }
@@ -148,7 +150,7 @@ describe("persistCatalog", () => {
       cards: [cardA],
     });
 
-    expect(second.cardsUpserted).toBe(1);
+    expect(second.cardsUnchanged).toBe(1);
     expect(second.cardsDeactivated).toBe(1);
     expect(prisma._printings.get("swsh3-1")?.isActive).toBe(false);
     expect(prisma._printings.has("swsh3-1")).toBe(true);
@@ -171,6 +173,63 @@ describe("persistCatalog", () => {
 
     expect(prisma._logicals.size).toBe(1);
     expect(prisma.cardLogical.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("classifica NEW / UPDATED / UNCHANGED / REMOVED (§11.2)", async () => {
+    const prisma = buildPrismaMock();
+    await persistCatalog(prisma as never, { sets: [setA], cards: [cardA, cardB] });
+
+    const changedA: ExternalCard = { ...cardA, legalStandard: true };
+    const cardC: ExternalCard = { ...cardA, tcgdexId: "swsh3-2", localId: "2", name: "Caterpie" };
+    const stats = await persistCatalog(prisma as never, {
+      sets: [setA],
+      cards: [changedA, cardC],
+    });
+
+    expect(stats.cardsNew).toBe(1);
+    expect(stats.cardsUpdated).toBe(1);
+    expect(stats.cardsUnchanged).toBe(0);
+    expect(stats.cardsRemoved).toBe(1);
+
+    const again = await persistCatalog(prisma as never, {
+      sets: [setA],
+      cards: [changedA, cardC],
+    });
+    expect(again.cardsUnchanged).toBe(2);
+    expect(again.cardsNew + again.cardsUpdated).toBe(0);
+  });
+
+  it("sync parcial não desativa cartas fora do recorte", async () => {
+    const prisma = buildPrismaMock();
+    await persistCatalog(prisma as never, { sets: [setA], cards: [cardA, cardB] });
+    const stats = await persistCatalog(
+      prisma as never,
+      { sets: [setA], cards: [cardA] },
+      { partial: true },
+    );
+    expect(stats.cardsRemoved).toBe(0);
+    expect(prisma._printings.get("swsh3-1")?.isActive).toBe(true);
+  });
+
+  it("energia básica 'Basic Fire Energy' e 'Fire Energy' compartilham carta lógica (§18)", async () => {
+    const prisma = buildPrismaMock();
+    const fire: ExternalCard = {
+      ...cardA,
+      tcgdexId: "mee-002",
+      localId: "002",
+      name: "Fire Energy",
+      category: "ENERGY",
+      energyType: "Normal",
+    };
+    const basicFire: ExternalCard = {
+      ...fire,
+      tcgdexId: "sve-002",
+      localId: "2",
+      name: "Basic Fire Energy",
+    };
+    await persistCatalog(prisma as never, { sets: [setA], cards: [fire, basicFire] });
+    expect(prisma._logicals.size).toBe(1);
+    expect([...prisma._logicals.values()][0].canonicalName).toBe("Fire Energy");
   });
 
   it("aborta catálogo vazio", async () => {

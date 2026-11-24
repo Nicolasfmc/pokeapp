@@ -94,6 +94,7 @@ describe("normalizeCard", () => {
       legalExpanded: true,
       imageUrl: "https://assets.tcgdex.net/en/swsh/swsh3/136/high.webp",
       tcgdexUpdatedAt: "2026-07-01T21:27:44+01:00",
+      energyType: null,
     });
   });
 
@@ -123,7 +124,25 @@ describe("normalizeCard", () => {
       legalExpanded: false,
       imageUrl: null,
       tcgdexUpdatedAt: null,
+      energyType: null,
     });
+  });
+});
+
+describe("logicalCardKey", () => {
+  it("unifica 'Basic X Energy' e 'X Energy' para energia básica", () => {
+    expect(logicalCardKey("Basic Fire Energy", "ENERGY", "Normal").canonicalName).toBe(
+      "Fire Energy",
+    );
+    expect(logicalCardKey("Fire Energy", "ENERGY", "Normal").canonicalName).toBe(
+      "Fire Energy",
+    );
+  });
+
+  it("não altera energia especial", () => {
+    expect(
+      logicalCardKey("Basic Something Energy", "ENERGY", "Special").canonicalName,
+    ).toBe("Basic Something Energy");
   });
 });
 

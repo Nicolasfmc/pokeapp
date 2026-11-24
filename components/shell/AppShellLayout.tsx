@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AppShell, Burger, Group, Text, ActionIcon, useMantineColorScheme } from "@mantine/core";
+import { AppShell, Burger, Button, Group, Text, useMantineColorScheme } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { AppNav } from "@/components/shell/AppNav";
 
@@ -10,16 +10,15 @@ function ColorSchemeToggle() {
   const next = colorScheme === "dark" ? "light" : "dark";
 
   return (
-    <ActionIcon
+    <Button
       variant="subtle"
       color="ink"
+      size="compact-sm"
       aria-label={next === "dark" ? "Ativar tema escuro" : "Ativar tema claro"}
       onClick={() => setColorScheme(next)}
     >
-      <span className="text-sm font-semibold tracking-wide">
-        {colorScheme === "dark" ? "Claro" : "Escuro"}
-      </span>
-    </ActionIcon>
+      {colorScheme === "dark" ? "Tema claro" : "Tema escuro"}
+    </Button>
   );
 }
 

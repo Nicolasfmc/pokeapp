@@ -18,6 +18,7 @@ import {
   Collapse,
   Paper,
 } from "@mantine/core";
+import { PrintingPicker } from "./PrintingPicker";
 
 export type InventoryItemDto = {
   id: string;
@@ -92,7 +93,7 @@ export function InventoryPanel({
   const [history, setHistory] = useState<TransactionDto[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
-  const [tcgdexId, setTcgdexId] = useState("");
+  const [cardPrintingId, setCardPrintingId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState<number | string>(1);
   const [condition, setCondition] = useState<string | null>("NM");
   const [language, setLanguage] = useState("en");
@@ -166,7 +167,7 @@ export function InventoryPanel({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          tcgdexId: tcgdexId.trim(),
+          cardPrintingId,
           quantity: Number(quantity),
           condition,
           language,
@@ -182,7 +183,7 @@ export function InventoryPanel({
         return;
       }
 
-      setTcgdexId("");
+      setCardPrintingId(null);
       setQuantity(1);
       setNote("");
       await reloadItems(filter, query);
@@ -289,14 +290,11 @@ export function InventoryPanel({
         <form onSubmit={onAdd}>
           <Stack gap="sm">
             <Text fw={600}>Adicionar carta</Text>
-            <Group grow align="flex-end">
-              <TextInput
-                label="TCGdex ID"
-                placeholder="ex.: swsh3-136"
-                value={tcgdexId}
-                onChange={(event) => setTcgdexId(event.currentTarget.value)}
-                required
-              />
+            <PrintingPicker
+              value={cardPrintingId}
+              onChange={(id) => setCardPrintingId(id)}
+            />
+            <div className="grid grid-cols-2 items-end gap-3 sm:grid-cols-3">
               <NumberInput
                 label="Quantidade"
                 min={1}
@@ -316,8 +314,8 @@ export function InventoryPanel({
                 value={language}
                 onChange={(event) => setLanguage(event.currentTarget.value)}
               />
-            </Group>
-            <Group grow align="flex-end">
+            </div>
+            <div className="grid grid-cols-2 items-end gap-3 sm:grid-cols-4">
               <Select
                 label="Status"
                 data={STATUSES}
@@ -340,16 +338,16 @@ export function InventoryPanel({
               <Button
                 type="submit"
                 loading={pending}
-                disabled={!tcgdexId.trim()}
+                disabled={!cardPrintingId}
               >
                 Adicionar
               </Button>
-            </Group>
+            </div>
           </Stack>
         </form>
       </Paper>
 
-      <Group justify="space-between" align="flex-end">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <SegmentedControl
           value={filter}
           onChange={(value) =>
@@ -361,28 +359,134 @@ export function InventoryPanel({
             { label: "Collection", value: "COLLECTION" },
           ]}
         />
-        <Group align="flex-end">
+        <div className="grid grid-cols-2 gap-3 sm:flex sm:items-end">
           <Select
             label="Motivo do ajuste ±"
             data={REASONS}
             value={adjustReason}
             onChange={setAdjustReason}
             allowDeselect={false}
-            w={180}
+            className="sm:w-[180px]"
           />
           <TextInput
             label="Buscar"
             placeholder="Nome, set, localId…"
             value={query}
             onChange={(event) => setQuery(event.currentTarget.value)}
-            w={240}
+            className="sm:w-[240px]"
           />
-        </Group>
-      </Group>
+        </div>
+      </div>
+
+      {/* Mobile (§98: Inventory Desktop ≈ Mobile): cards com [−] [qtd] [+] à mão (§38). */}
+      <Stack gap="sm" className="sm:hidden">
+        {items.length === 0 ? (
+          <Text c="dimmed" py="md">
+            Nenhum item no inventário.
+          </Text>
+        ) : (
+          items.map((item) => (
+            <Paper
+              key={item.id}
+              p="sm"
+              radius="md"
+              className="border border-[var(--poke-line)] bg-[var(--poke-panel)]"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <Text fw={600} className="truncate">
+                    {item.cardPrinting.name}
+                  </Text>
+                  <Text size="xs" c="dimmed">
+                    {item.cardPrinting.set.code ?? item.cardPrinting.set.name} · #
+                    {item.cardPrinting.localId} · {item.language}
+                  </Text>
+                  <Group gap={4} mt={4}>
+                    <Badge variant="light" size="sm">
+                      {item.condition}
+                    </Badge>
+                    <Badge
+                      variant="light"
+                      size="sm"
+                      color={item.collectionStatus === "COMPETITIVE" ? "ember" : "ink"}
+                    >
+                      {item.collectionStatus}
+                    </Badge>
+                  </Group>
+                </div>
+                <Group gap={6} wrap="nowrap" className="shrink-0">
+                  <ActionIcon
+                    size="lg"
+                    variant="default"
+                    aria-label="Diminuir"
+                    disabled={pending || item.quantity <= item.sleevedAllocatedQuantity}
+                    onClick={() => void onAdjust(item.id, -1)}
+                  >
+                    −
+                  </ActionIcon>
+                  <Text fw={700} w={28} ta="center">
+                    {item.quantity}
+                  </Text>
+                  <ActionIcon
+                    size="lg"
+                    variant="default"
+                    aria-label="Aumentar"
+                    disabled={pending}
+                    onClick={() => void onAdjust(item.id, 1)}
+                  >
+                    +
+                  </ActionIcon>
+                </Group>
+              </div>
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <Text size="xs" c="dimmed">
+                  Sleeved {item.sleevedAllocatedQuantity} · Troca{" "}
+                  {item.logicalAvailability.availableForTrade} (owned{" "}
+                  {item.logicalAvailability.ownedQuantity}, prot{" "}
+                  {item.logicalAvailability.protectedQuantity})
+                </Text>
+                <Button
+                  variant="subtle"
+                  size="compact-xs"
+                  onClick={() => void toggleHistory(item.id)}
+                >
+                  {historyItemId === item.id ? "Ocultar" : "Histórico"}
+                </Button>
+              </div>
+              {historyItemId === item.id ? (
+                <Stack gap={2} mt="xs" className="border-t border-[var(--poke-line)] pt-2">
+                  {historyLoading ? (
+                    <Text size="xs" c="dimmed">
+                      Carregando…
+                    </Text>
+                  ) : history.length === 0 ? (
+                    <Text size="xs" c="dimmed">
+                      Sem transações.
+                    </Text>
+                  ) : (
+                    history.map((tx) => (
+                      <div key={tx.id} className="flex justify-between gap-2 text-xs">
+                        <span>
+                          {tx.quantityDelta > 0 ? "+" : ""}
+                          {tx.quantityDelta} {tx.reason}
+                          {tx.note ? ` — ${tx.note}` : ""}
+                        </span>
+                        <span className="shrink-0 text-[color-mix(in_srgb,var(--poke-ink)_55%,transparent)]">
+                          {new Date(tx.createdAt).toLocaleDateString("pt-BR")}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </Stack>
+              ) : null}
+            </Paper>
+          ))
+        )}
+      </Stack>
 
       <Paper
         radius="md"
-        className="overflow-x-auto border border-[var(--poke-line)] bg-[var(--poke-panel)]"
+        className="hidden overflow-x-auto border border-[var(--poke-line)] bg-[var(--poke-panel)] sm:block"
       >
         <Table
           striped
@@ -493,7 +597,7 @@ export function InventoryPanel({
         </Table>
       </Paper>
 
-      <Collapse in={historyItemId != null}>
+      <Collapse in={historyItemId != null} className="hidden sm:block">
         <Paper
           p="md"
           radius="md"

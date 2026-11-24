@@ -20,6 +20,8 @@ import {
 } from "@mantine/core";
 import type { DeckCardDto, DeckDto } from "./types";
 import { DeckSleevePanel } from "./DeckSleevePanel";
+import { DeckInventoryCheckPanel } from "./DeckInventoryCheckPanel";
+import { DeckCardSearch } from "./DeckCardSearch";
 
 type FormatOption = {
   id: string;
@@ -330,7 +332,7 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
       {error ? <Alert color="red">{error}</Alert> : null}
       {message ? <Alert color="green">{message}</Alert> : null}
 
-      <Group align="flex-start" gap="lg" wrap="nowrap" preventGrowOverflow={false}>
+      <Group align="flex-start" gap="lg" wrap="wrap" preventGrowOverflow={false}>
         <Stack gap="md" style={{ flex: "1 1 320px", minWidth: 280 }}>
           <form onSubmit={onSaveMeta}>
             <Stack
@@ -427,6 +429,35 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
         </Stack>
 
         <Stack gap="md" style={{ flex: "2 1 480px", minWidth: 0 }}>
+          <DeckInventoryCheckPanel deckId={deck.id} refreshKey={deck.updatedAt} />
+
+          <DeckCardSearch
+            formatCode={deck.format.code}
+            onAdd={(card) => {
+              setCards((prev) => {
+                const existing = prev.find((c) => c.logicalCardId === card.logicalCardId);
+                if (existing) {
+                  return prev.map((c) =>
+                    c.logicalCardId === card.logicalCardId
+                      ? { ...c, quantity: c.quantity + 1 }
+                      : c,
+                  );
+                }
+                return [
+                  ...prev,
+                  {
+                    id: `tmp-${card.logicalCardId}`,
+                    logicalCardId: card.logicalCardId,
+                    quantity: 1,
+                    canonicalName: card.canonicalName,
+                    category: card.category,
+                  },
+                ];
+              });
+              setMessage(`Adicionada: ${card.canonicalName} (lembre de salvar as cartas)`);
+            }}
+          />
+
           <form onSubmit={onAddByPrinting}>
             <Group
               align="flex-end"
@@ -462,8 +493,8 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
                 Adicionar
               </Button>
               <Text size="xs" c="dimmed" w="100%">
-                Resolve via Prisma (set + localId). Busca avançada fica com Cards
-                (WS-F).
+                Adicionar pela impressão (set + número de coleção, como no
+                Limitless).
               </Text>
             </Group>
           </form>
