@@ -45,7 +45,7 @@ export function CardSetDetail({ set }: CardSetDetailProps) {
           </div>
         </div>
 
-        <SimpleGrid cols={{ base: 2, sm: 3, md: 4, lg: 6 }} spacing="lg">
+        <SimpleGrid cols={{ base: 3, sm: 3, md: 4, lg: 6 }} spacing={{ base: "xs", sm: "lg" }}>
           {set.printings.map((printing) => (
             <CardPrintingThumb key={printing.id} printing={printing} />
           ))}

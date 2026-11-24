@@ -380,7 +380,7 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
                 <button
                   type="button"
                   onClick={() => setCoverOpen(true)}
-                  className="cursor-pointer overflow-hidden rounded-lg border-0 p-0 ring-1 ring-[var(--sb-line)] hover:ring-[var(--sb-accent)]"
+                  className="w-full max-w-[200px] cursor-pointer overflow-hidden rounded-lg border-0 p-0 ring-1 sm:max-w-none ring-[var(--sb-line)] hover:ring-[var(--sb-accent)]"
                   aria-label="Escolher capa do deck"
                 >
                   <CardArt src={deck.coverImageUrl} alt={`Capa de ${deck.name}`} />
@@ -566,7 +566,7 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
                     {group.cards.reduce((s, c) => s + c.quantity, 0)}
                   </Text>
                 </Group>
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 xl:grid-cols-6">
+                <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-4 sm:gap-2 xl:grid-cols-6">
                   {group.cards.map((card) => (
                     <div key={card.logicalCardId} className="min-w-0">
                       <CardImage
@@ -574,9 +574,9 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
                         alt={card.canonicalName}
                         sizes="(max-width: 640px) 30vw, 130px"
                       >
-                        <div className="absolute inset-x-1 bottom-1 flex items-center justify-between gap-1">
+                        <div className="absolute inset-x-0.5 bottom-1 flex items-center justify-between gap-0.5 sm:inset-x-1">
                           <ActionIcon
-                            size="md"
+                            size="sm"
                             radius="xl"
                             variant="filled"
                             color="dark"
@@ -588,11 +588,11 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
                           >
                             −
                           </ActionIcon>
-                          <span className="min-w-8 rounded-full bg-black/75 px-2 py-0.5 text-center text-base font-bold text-white shadow">
+                          <span className="min-w-6 rounded-full bg-black/75 px-1.5 py-0.5 text-center text-sm font-bold text-white shadow sm:min-w-8 sm:px-2 sm:text-base">
                             {card.quantity}
                           </span>
                           <ActionIcon
-                            size="md"
+                            size="sm"
                             radius="xl"
                             variant="filled"
                             color="ember"

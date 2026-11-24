@@ -57,7 +57,7 @@ export function DeckCoverPicker({ deck, opened, onClose, onChange }: Props) {
       centered
     >
       <Stack gap="md">
-        <div className="mx-auto w-full max-w-sm overflow-hidden rounded-xl ring-1 ring-[var(--sb-line)]">
+        <div className="mx-auto w-full max-w-[240px] overflow-hidden sm:max-w-sm rounded-xl ring-1 ring-[var(--sb-line)]">
           <CardArt src={deck.coverImageUrl} alt="Capa atual" />
         </div>
         {error ? <Alert color="red">{error}</Alert> : null}
@@ -70,7 +70,7 @@ export function DeckCoverPicker({ deck, opened, onClose, onChange }: Props) {
             <Text size="sm" c="dimmed">
               Clique numa carta do deck. Na lista aparece só a arte do Pokémon.
             </Text>
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 md:grid-cols-6">
+            <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-5 sm:gap-2 md:grid-cols-6">
               {choices.map((card) => {
                 const selected = deck.coverPrintingId === card.printingId;
                 return (

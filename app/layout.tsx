@@ -46,6 +46,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="min-h-full flex flex-col">
         <AppProviders>{children}</AppProviders>
+        <span
+          aria-label="Versão do app"
+          className="pointer-events-none fixed bottom-1.5 right-2.5 z-50 select-none font-[family-name:var(--font-ibm-plex-mono)] text-[11px] text-gray-400"
+        >
+          v{process.env.NEXT_PUBLIC_APP_VERSION}
+        </span>
       </body>
     </html>
   );

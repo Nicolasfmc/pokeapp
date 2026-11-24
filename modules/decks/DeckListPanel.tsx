@@ -120,16 +120,16 @@ export function DeckListPanel({ initialDecks }: { initialDecks: DeckDto[] }) {
           {decks.map((deck) => (
             <div
               key={deck.id}
-              className="flex flex-col overflow-hidden rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/85 transition-colors hover:border-[var(--sb-accent)]"
+              className="flex flex-row overflow-hidden rounded-xl border sm:flex-col border-[var(--sb-line)] bg-[var(--sb-panel)]/85 transition-colors hover:border-[var(--sb-accent)]"
             >
               <Link
                 href={`/decks/${deck.id}`}
                 aria-label={`Abrir ${deck.name}`}
-                className="block"
+                className="block w-28 shrink-0 self-start sm:w-auto sm:self-auto"
               >
                 <CardArt src={deck.coverImageUrl} alt={`Capa de ${deck.name}`} />
               </Link>
-              <Stack gap={6} p="sm" style={{ flex: 1 }}>
+              <Stack gap={6} p="sm" style={{ flex: 1, minWidth: 0 }}>
                 <Text
                   component={Link}
                   href={`/decks/${deck.id}`}

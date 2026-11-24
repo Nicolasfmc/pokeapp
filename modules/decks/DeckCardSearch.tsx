@@ -132,7 +132,7 @@ export function DeckCardSearch({ formatCode, quantities = {}, onAdd }: Props) {
           Clique na carta para adicionar 1 cópia.
         </Text>
       ) : null}
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+      <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-4 sm:gap-2 lg:grid-cols-6">
         {visibleResults.map((card) => {
           const inDeck = quantities[card.id] ?? 0;
           return (

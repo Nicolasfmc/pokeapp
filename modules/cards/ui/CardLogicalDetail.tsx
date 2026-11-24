@@ -40,7 +40,7 @@ export function CardLogicalDetail({ logical }: CardLogicalDetailProps) {
           </Text>
         </div>
 
-        <SimpleGrid cols={{ base: 2, sm: 3, md: 4, lg: 6 }} spacing="lg">
+        <SimpleGrid cols={{ base: 3, sm: 3, md: 4, lg: 6 }} spacing={{ base: "xs", sm: "lg" }}>
           {logical.printings.map((printing) => (
             <CardPrintingThumb key={printing.id} printing={printing} />
           ))}
