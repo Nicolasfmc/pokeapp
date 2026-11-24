@@ -34,8 +34,9 @@ export function CardLogicalDetail({ logical }: CardLogicalDetailProps) {
             </Text>
           </div>
           <Text mt="sm" className="max-w-2xl text-[color-mix(in_srgb,var(--poke-ink)_75%,transparent)]">
-            Reprints desta carta lógica — decks usam a identidade lógica;
-            inventário trabalha por impressão.
+            Todas as impressões desta carta (reprints e artes alternativas).
+            Escolha uma impressão específica para ver detalhes. Decks usam a
+            carta unificada; o inventário guarda a impressão.
           </Text>
         </div>
 

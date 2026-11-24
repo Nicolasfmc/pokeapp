@@ -9,6 +9,7 @@ export type ResolvedCardPrinting = {
   setCode: string | null;
   localId: string;
   printingName: string;
+  imageUrl: string | null;
   nameMatched: boolean;
 };
 
@@ -140,6 +141,7 @@ export async function resolveCardBySetAndCollector(
       setCode: printing.set.code,
       localId: printing.localId,
       printingName: printing.name,
+      imageUrl: printing.imageUrl,
       nameMatched,
     },
   };

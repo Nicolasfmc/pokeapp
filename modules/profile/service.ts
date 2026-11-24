@@ -68,8 +68,10 @@ async function listTradeableInventory(
   const inventoryRows = await prisma.inventoryItem.findMany({
     where: { userId },
     select: {
+      quantity: true,
       cardPrinting: {
         select: {
+          imageUrl: true,
           logicalCardId: true,
           logicalCard: {
             select: {
@@ -82,14 +84,25 @@ async function listTradeableInventory(
     },
   });
 
-  const logicalById = new Map<string, { id: string; name: string }>();
+  // Imagem: a impressão que o usuário tem em maior quantidade.
+  const logicalById = new Map<
+    string,
+    { id: string; name: string; imageUrl: string | null; best: number }
+  >();
   for (const row of inventoryRows) {
     const logical = row.cardPrinting.logicalCard;
-    if (!logicalById.has(logical.id)) {
+    const current = logicalById.get(logical.id);
+    const image = row.cardPrinting.imageUrl;
+    if (!current) {
       logicalById.set(logical.id, {
         id: logical.id,
         name: logical.canonicalName,
+        imageUrl: image,
+        best: image ? row.quantity : -1,
       });
+    } else if (image && row.quantity > current.best) {
+      current.imageUrl = image;
+      current.best = row.quantity;
     }
   }
 
@@ -108,7 +121,7 @@ async function listTradeableInventory(
       continue;
     }
     items.push({
-      card: { id: card.id, name: card.name },
+      card: { id: card.id, name: card.name, imageUrl: card.imageUrl },
       availableQuantity,
     });
   }

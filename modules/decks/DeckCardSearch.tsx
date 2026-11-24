@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import {
   Badge,
-  Button,
   Checkbox,
   Group,
   Loader,
@@ -13,21 +12,34 @@ import {
   TextInput,
 } from "@mantine/core";
 import type { CardCategory } from "@prisma/client";
+import { CardImage } from "@/modules/cards/ui/CardImage";
 
 type LogicalResult = {
   id: string;
   canonicalName: string;
   category: CardCategory;
   printingCount?: number;
+  imageUrl?: string | null;
+  representativePrintingId?: string | null;
+};
+
+export type DeckSearchPick = {
+  logicalCardId: string;
+  canonicalName: string;
+  category: CardCategory;
+  imageUrl: string | null;
+  printingId: string | null;
 };
 
 type Props = {
   formatCode: string;
-  onAdd: (card: { logicalCardId: string; canonicalName: string; category: CardCategory }) => void;
+  /** Quantidade atual no deck por logicalCardId (badge na imagem). */
+  quantities?: Record<string, number>;
+  onAdd: (card: DeckSearchPick) => void;
 };
 
 /** §5.2 — busca de cartas no Deckbuilder (lê só PostgreSQL, nunca a TCGdex). */
-export function DeckCardSearch({ formatCode, onAdd }: Props) {
+export function DeckCardSearch({ formatCode, quantities = {}, onAdd }: Props) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("ALL");
   const [onlyLegal, setOnlyLegal] = useState(true);
@@ -43,7 +55,7 @@ export function DeckCardSearch({ formatCode, onAdd }: Props) {
       setLoading(true);
       setError(null);
       try {
-        const params = new URLSearchParams({ mode: "logical", q: term, pageSize: "12" });
+        const params = new URLSearchParams({ mode: "logical", q: term, pageSize: "24" });
         if (category !== "ALL") params.set("category", category);
         const format = formatCode.toLowerCase();
         if (onlyLegal && (format === "standard" || format === "expanded")) {
@@ -115,38 +127,58 @@ export function DeckCardSearch({ formatCode, onAdd }: Props) {
           Nenhuma carta encontrada.
         </Text>
       ) : null}
-      <Stack gap={4}>
-        {visibleResults.map((card) => (
-          <Group key={card.id} justify="space-between" wrap="nowrap" gap="xs">
-            <Group gap="xs" wrap="nowrap" className="min-w-0">
-              <Text size="sm" truncate>
-                {card.canonicalName}
-              </Text>
-              <Badge size="xs" variant="light">
-                {card.category}
-              </Badge>
-              {card.printingCount ? (
-                <Text size="xs" c="dimmed">
-                  {card.printingCount} impressões
-                </Text>
-              ) : null}
-            </Group>
-            <Button
-              size="compact-xs"
-              variant="light"
+      {visibleResults.length > 0 ? (
+        <Text size="xs" c="dimmed">
+          Clique na carta para adicionar 1 cópia.
+        </Text>
+      ) : null}
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+        {visibleResults.map((card) => {
+          const inDeck = quantities[card.id] ?? 0;
+          return (
+            <button
+              key={card.id}
+              type="button"
+              title={`Adicionar ${card.canonicalName}`}
+              aria-label={`Adicionar ${card.canonicalName}`}
+              className="group cursor-pointer border-0 bg-transparent p-0 text-left transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-[var(--poke-accent)]"
               onClick={() =>
                 onAdd({
                   logicalCardId: card.id,
                   canonicalName: card.canonicalName,
                   category: card.category,
+                  imageUrl: card.imageUrl ?? null,
+                  printingId: card.representativePrintingId ?? null,
                 })
               }
             >
-              + Adicionar
-            </Button>
-          </Group>
-        ))}
-      </Stack>
+              <CardImage
+                src={card.imageUrl}
+                alt={card.canonicalName}
+                sizes="(max-width: 640px) 30vw, 120px"
+                className="group-hover:ring-2 group-hover:ring-[var(--poke-accent)]"
+              >
+                {inDeck > 0 ? (
+                  <Badge
+                    size="lg"
+                    circle
+                    color="ember"
+                    className="absolute right-1 top-1 shadow"
+                  >
+                    {inDeck}
+                  </Badge>
+                ) : null}
+                <span className="absolute inset-x-0 bottom-0 bg-black/60 py-0.5 text-center text-xs font-bold text-white opacity-0 transition-opacity group-hover:opacity-100">
+                  + Adicionar
+                </span>
+              </CardImage>
+              <Text size="xs" mt={4} lineClamp={1}>
+                {card.canonicalName}
+              </Text>
+            </button>
+          );
+        })}
+      </div>
     </Stack>
   );
 }

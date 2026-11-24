@@ -17,6 +17,9 @@ export type CardLogicalDto = {
   canonicalName: string;
   category: CardCategoryDto;
   printingCount?: number;
+  /** Imagem da impressão padrão (cartas unificadas). */
+  imageUrl?: string | null;
+  representativePrintingId?: string | null;
 };
 
 export type CardPrintingDto = {

@@ -8,6 +8,7 @@ import { getStatisticsSummary } from "@/server/services/statistics";
 import { listTournaments } from "@/server/services/tournament";
 import { listInventoryItems } from "@/server/services/inventory";
 import { getInventoryCheckSummaries } from "@/server/services/inventory-check";
+import { CardArt } from "@/modules/cards/ui/CardImage";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -201,8 +202,16 @@ export default async function DashboardPage() {
             <ul className="flex list-none flex-col gap-2 p-0">
               {activeDecks.slice(0, 5).map((deck) => (
                 <li key={deck.id} className="flex items-center justify-between gap-2">
-                  <Link href={`/decks/${deck.id}`} className="truncate text-sm">
-                    {deck.name}
+                  <Link
+                    href={`/decks/${deck.id}`}
+                    className="flex min-w-0 items-center gap-2 text-sm"
+                  >
+                    <CardArt
+                      src={deck.coverImageUrl}
+                      alt=""
+                      className="w-14 shrink-0 rounded"
+                    />
+                    <span className="truncate">{deck.name}</span>
                   </Link>
                   <span className="flex shrink-0 items-center gap-2">
                     <Text size="xs" c="dimmed">

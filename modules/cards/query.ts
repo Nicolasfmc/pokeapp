@@ -76,11 +76,14 @@ function parseFormat(
     return undefined;
   }
   const normalized = value.trim().toLowerCase();
+  if (normalized === "all") {
+    return undefined;
+  }
   if (normalized === "standard" || normalized === "expanded") {
     return normalized;
   }
   throw new CardsServiceError(
-    "format inválido. Use standard ou expanded.",
+    "format inválido. Use standard, expanded ou all.",
     400,
     "INVALID_FORMAT",
   );

@@ -1,4 +1,6 @@
 import { prisma } from "@/server/database";
+import { flattenCandidate, representativeSelect } from "@/modules/cards/service";
+import { pickRepresentative } from "@/modules/cards/representative";
 import {
   computeInventoryCheck,
   type InventoryCheckLot,
@@ -62,11 +64,21 @@ export async function getDeckInventoryCheck(
     where: { id: deckId, userId },
     select: {
       id: true,
+      format: { select: { code: true } },
       cards: {
         select: {
           logicalCardId: true,
           quantity: true,
-          logicalCard: { select: { canonicalName: true, category: true } },
+          logicalCard: {
+            select: {
+              canonicalName: true,
+              category: true,
+              printings: {
+                where: { isActive: true, imageUrl: { not: null } },
+                select: representativeSelect,
+              },
+            },
+          },
         },
       },
     },
@@ -75,11 +87,17 @@ export async function getDeckInventoryCheck(
     throw new InventoryCheckError("Deck não encontrado.", 404, "NOT_FOUND");
   }
 
+  const formatCode = deck.format.code.toLowerCase();
+  const format =
+    formatCode === "standard" || formatCode === "expanded" ? formatCode : null;
   const requirements: InventoryCheckRequirement[] = deck.cards.map((card) => ({
     logicalCardId: card.logicalCardId,
     canonicalName: card.logicalCard.canonicalName,
     category: card.logicalCard.category,
     required: card.quantity,
+    imageUrl:
+      pickRepresentative(card.logicalCard.printings.map(flattenCandidate), format)
+        ?.imageUrl ?? null,
   }));
 
   const lots = await loadLots(

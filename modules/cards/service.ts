@@ -10,6 +10,7 @@ import {
   buildPrintingWhere,
   buildSetWhere,
 } from "./query";
+import { pickRepresentative } from "./representative";
 import type {
   CardLogicalDetailDto,
   CardPrintingDto,
@@ -23,6 +24,28 @@ const printingInclude = {
   set: true,
   logicalCard: true,
 } as const;
+
+export const representativeSelect = {
+  id: true,
+  imageUrl: true,
+  rarity: true,
+  legalStandard: true,
+  legalExpanded: true,
+  isActive: true,
+  set: { select: { releaseDate: true } },
+} as const;
+
+export function flattenCandidate(p: {
+  id: string;
+  imageUrl: string | null;
+  rarity: string | null;
+  legalStandard: boolean;
+  legalExpanded: boolean;
+  isActive: boolean;
+  set: { releaseDate: Date | null };
+}) {
+  return { ...p, releaseDate: p.set.releaseDate };
+}
 
 export async function searchCards(
   params: CardSearchParams,
@@ -38,7 +61,13 @@ export async function searchCards(
       prisma.cardLogical.count({ where }),
       prisma.cardLogical.findMany({
         where,
-        include: { _count: { select: { printings: true } } },
+        include: {
+          _count: { select: { printings: true } },
+          printings: {
+            where: { isActive: true, imageUrl: { not: null } },
+            select: representativeSelect,
+          },
+        },
         orderBy: [{ canonicalName: "asc" }, { category: "asc" }],
         skip,
         take: pageSize,
@@ -50,7 +79,17 @@ export async function searchCards(
       page,
       pageSize,
       total,
-      items: rows.map(toCardLogicalDto),
+      items: rows.map((row) => {
+        const rep = pickRepresentative(
+          row.printings.map(flattenCandidate),
+          params.format ?? null,
+        );
+        return {
+          ...toCardLogicalDto(row),
+          imageUrl: rep?.imageUrl ?? null,
+          representativePrintingId: rep?.id ?? null,
+        };
+      }),
     };
   }
 
