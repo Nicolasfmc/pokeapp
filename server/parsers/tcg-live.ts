@@ -1,6 +1,6 @@
 import { createParserError, type ParserError } from "./errors";
 
-export const TCG_LIVE_PARSER_VERSION = "1.0.0";
+export const TCG_LIVE_PARSER_VERSION = "1.1.0";
 
 export type MatchResult = "WIN" | "LOSS" | "DRAW" | "UNKNOWN";
 export type TurnOrder = "FIRST" | "SECOND";
@@ -17,6 +17,13 @@ export type StructuredMatchData = {
   turn_order: TurnOrder | null;
   going_first_player: string | null;
   format: string | null;
+  /** Oponente do viewer (null sem viewer válido). */
+  opponent: string | null;
+  /**
+   * Pokémon colocados em campo / evoluídos por jogador, na ordem em que
+   * aparecem. Só nomes que o log comprovadamente associa ao jogador (§60).
+   */
+  pokemon_by_player: Record<string, string[]>;
   errors: ParserError[];
 };
 
@@ -40,6 +47,13 @@ const PRIZE_WINS =
   /^(.+?)\s+took all (?:of )?(?:their|his|her) Prize cards\.\s*(?:(.+?)\s+wins\.?)?$/i;
 const RESULT_CODE = /\bResult\s*:\s*([WLD])\b/i;
 const TURN_ORDER_CODE = /\bTurn\s*Order\s*:\s*(FIRST|SECOND|1st|2nd)\b/i;
+
+// "<player> played (twm_128) Dreepy to the Bench." / "... to the Active Spot."
+const PLAYED_TO_FIELD =
+  /^(.+?)\s+played\s+(?:\([^)]*\)\s+)?(.+?)\s+to\s+(?:the|their)\s+(?:Bench|Active Spot)\.?$/i;
+// "<player>'s (twm_128) Dreepy evolved into (twm_129) Drakloak[ on the Bench]."
+const EVOLVED_INTO =
+  /^(.+?)'s\s+(?:\([^)]*\)\s+)?.+?\s+evolved into\s+(?:\([^)]*\)\s+)?(.+?)(?:\s+(?:on the Bench|in the Active Spot))?\.?$/i;
 
 function normalizeName(name: string): string {
   return name.trim().replace(/\s+/g, " ");
@@ -130,6 +144,39 @@ function extractWinner(lines: string[]): string | null {
     }
   }
   return null;
+}
+
+export function extractPokemonByPlayer(
+  lines: string[],
+  players: Array<string | null>,
+): Record<string, string[]> {
+  const known = players.filter((p): p is string => Boolean(p));
+  const result: Record<string, string[]> = {};
+  for (const player of known) result[player] = [];
+
+  const add = (playerRaw: string, cardRaw: string) => {
+    const player = known.find((p) => namesEqual(p, normalizeName(playerRaw)));
+    if (!player) return;
+    const card = normalizeName(cardRaw);
+    if (card && !result[player].includes(card)) {
+      result[player].push(card);
+    }
+  };
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    const evolved = trimmed.match(EVOLVED_INTO);
+    if (evolved) {
+      add(evolved[1] ?? "", evolved[2] ?? "");
+      continue;
+    }
+    const played = trimmed.match(PLAYED_TO_FIELD);
+    if (played) {
+      add(played[1] ?? "", played[2] ?? "");
+    }
+  }
+  return result;
 }
 
 function extractResultCode(lines: string[]): MatchResult | null {
@@ -226,6 +273,8 @@ export function parseTcgLiveBattleLog(
       turn_order: null,
       going_first_player: null,
       format: null,
+      opponent: null,
+      pokemon_by_player: {},
       errors: [
         createParserError("EMPTY_INPUT", "Battle log TCG Live vazio"),
       ],
@@ -277,6 +326,15 @@ export function parseTcgLiveBattleLog(
     turnOrderCode,
   });
 
+  const opponent =
+    viewer && player1 && player2
+      ? namesEqual(viewer, player1)
+        ? player2
+        : namesEqual(viewer, player2)
+          ? player1
+          : null
+      : null;
+
   const value: StructuredMatchData = {
     parser_version: TCG_LIVE_PARSER_VERSION,
     raw_log,
@@ -289,6 +347,8 @@ export function parseTcgLiveBattleLog(
     turn_order,
     going_first_player,
     format,
+    opponent,
+    pokemon_by_player: extractPokemonByPlayer(lines, [player1, player2]),
     errors,
   };
 

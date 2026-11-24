@@ -18,6 +18,7 @@ import {
   Collapse,
   Paper,
 } from "@mantine/core";
+import { PrintingPicker } from "./PrintingPicker";
 
 export type InventoryItemDto = {
   id: string;
@@ -92,7 +93,7 @@ export function InventoryPanel({
   const [history, setHistory] = useState<TransactionDto[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
-  const [tcgdexId, setTcgdexId] = useState("");
+  const [cardPrintingId, setCardPrintingId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState<number | string>(1);
   const [condition, setCondition] = useState<string | null>("NM");
   const [language, setLanguage] = useState("en");
@@ -166,7 +167,7 @@ export function InventoryPanel({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          tcgdexId: tcgdexId.trim(),
+          cardPrintingId,
           quantity: Number(quantity),
           condition,
           language,
@@ -182,7 +183,7 @@ export function InventoryPanel({
         return;
       }
 
-      setTcgdexId("");
+      setCardPrintingId(null);
       setQuantity(1);
       setNote("");
       await reloadItems(filter, query);
@@ -289,13 +290,10 @@ export function InventoryPanel({
         <form onSubmit={onAdd}>
           <Stack gap="sm">
             <Text fw={600}>Adicionar carta</Text>
-            <Group grow align="flex-end">
-              <TextInput
-                label="TCGdex ID"
-                placeholder="ex.: swsh3-136"
-                value={tcgdexId}
-                onChange={(event) => setTcgdexId(event.currentTarget.value)}
-                required
+            <Group align="flex-end" wrap="wrap">
+              <PrintingPicker
+                value={cardPrintingId}
+                onChange={(id) => setCardPrintingId(id)}
               />
               <NumberInput
                 label="Quantidade"
@@ -317,7 +315,7 @@ export function InventoryPanel({
                 onChange={(event) => setLanguage(event.currentTarget.value)}
               />
             </Group>
-            <Group grow align="flex-end">
+            <Group grow align="flex-end" className="flex-wrap">
               <Select
                 label="Status"
                 data={STATUSES}
@@ -340,7 +338,7 @@ export function InventoryPanel({
               <Button
                 type="submit"
                 loading={pending}
-                disabled={!tcgdexId.trim()}
+                disabled={!cardPrintingId}
               >
                 Adicionar
               </Button>

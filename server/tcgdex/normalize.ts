@@ -32,12 +32,25 @@ export function buildCardImageUrl(imageBase: string | null | undefined): string 
   return `${trimmed}/high.webp`;
 }
 
+/**
+ * Identidade lógica (§12, §18). Energias básicas compartilham identidade:
+ * a TCGdex nomeia algumas como "Basic Fire Energy" e outras como "Fire Energy";
+ * ambas viram "Fire Energy".
+ */
 export function logicalCardKey(
   name: string,
   category: ExternalCardCategory,
+  energyType?: string | null,
 ): LogicalCardKey {
+  let canonicalName = name.trim().replace(/\s+/g, " ");
+  if (
+    category === "ENERGY" &&
+    (energyType ?? "").trim().toLowerCase() === "normal"
+  ) {
+    canonicalName = canonicalName.replace(/^basic\s+/i, "");
+  }
   return {
-    canonicalName: name.trim(),
+    canonicalName,
     category,
   };
 }
@@ -76,6 +89,7 @@ export function normalizeCard(input: TcgdexCardNormalizeInput): ExternalCard {
     legalExpanded: Boolean(input.legal?.expanded),
     imageUrl: buildCardImageUrl(input.image),
     tcgdexUpdatedAt: input.updated ?? null,
+    energyType: category === "ENERGY" ? (input.energyType ?? null) : null,
   };
 }
 

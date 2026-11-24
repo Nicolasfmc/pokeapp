@@ -175,7 +175,19 @@ export function buildPrintingWhere(
   }
 
   if (params.localId) {
-    and.push({ localId: { equals: params.localId, mode: "insensitive" } });
+    // "2" deve casar "002" (TCGdex) e vice-versa.
+    const raw = params.localId.trim();
+    const stripped = raw.replace(/^0+(?=\d)/, "");
+    const variants = new Set([raw, stripped]);
+    if (/^\d+$/.test(stripped)) {
+      variants.add(stripped.padStart(2, "0"));
+      variants.add(stripped.padStart(3, "0"));
+    }
+    and.push({
+      OR: [...variants].map((localId) => ({
+        localId: { equals: localId, mode: "insensitive" as const },
+      })),
+    });
   }
 
   if (params.legalStandard !== undefined) {

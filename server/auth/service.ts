@@ -203,6 +203,7 @@ export async function getAuthMe(session: SessionUser) {
       profile: {
         select: {
           displayName: true,
+          bio: true,
           isPublic: true,
         },
       },
@@ -222,8 +223,83 @@ export async function getAuthMe(session: SessionUser) {
     usernameChangedAt: user.usernameChangedAt,
     deletionRequestedAt: user.deletionRequestedAt,
     displayName: user.profile?.displayName ?? user.username,
+    bio: user.profile?.bio ?? null,
     isPublic: user.profile?.isPublic ?? true,
   };
+}
+
+const DISPLAY_NAME_MAX = 60;
+const BIO_MAX = 500;
+
+/** §83 (display name livre), §84 (perfil público desabilitável), §86 (bio). */
+export async function updateProfileSettings(
+  session: SessionUser,
+  input: { displayName?: unknown; bio?: unknown; isPublic?: unknown },
+) {
+  const data: { displayName?: string; bio?: string | null; isPublic?: boolean } = {};
+
+  if (input.displayName !== undefined) {
+    if (typeof input.displayName !== "string" || !input.displayName.trim()) {
+      throw new AuthServiceError("Nome de exibição é obrigatório.", 400, "INVALID_DISPLAY_NAME");
+    }
+    const displayName = input.displayName.trim().replace(/\s+/g, " ");
+    if (displayName.length > DISPLAY_NAME_MAX) {
+      throw new AuthServiceError(
+        `Nome de exibição deve ter até ${DISPLAY_NAME_MAX} caracteres.`,
+        400,
+        "INVALID_DISPLAY_NAME",
+      );
+    }
+    data.displayName = displayName;
+  }
+
+  if (input.bio !== undefined) {
+    if (input.bio !== null && typeof input.bio !== "string") {
+      throw new AuthServiceError("Bio inválida.", 400, "INVALID_BIO");
+    }
+    const bio = typeof input.bio === "string" ? input.bio.trim() : "";
+    if (bio.length > BIO_MAX) {
+      throw new AuthServiceError(`Bio deve ter até ${BIO_MAX} caracteres.`, 400, "INVALID_BIO");
+    }
+    data.bio = bio || null;
+  }
+
+  if (input.isPublic !== undefined) {
+    if (typeof input.isPublic !== "boolean") {
+      throw new AuthServiceError("isPublic deve ser booleano.", 400, "INVALID_IS_PUBLIC");
+    }
+    data.isPublic = input.isPublic;
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.id },
+    select: { accountStatus: true, username: true },
+  });
+  if (!user || user.accountStatus === AccountStatus.PERMANENTLY_DELETED) {
+    throw new AuthServiceError("Conta indisponível.", 403, "ACCOUNT_DELETED");
+  }
+
+  const profile = await prisma.userProfile.upsert({
+    where: { userId: session.id },
+    create: {
+      userId: session.id,
+      displayName: data.displayName ?? user.username,
+      bio: data.bio ?? null,
+      isPublic: data.isPublic ?? true,
+    },
+    update: data,
+    select: { displayName: true, bio: true, isPublic: true },
+  });
+
+  if (data.isPublic !== undefined) {
+    await writeAudit(
+      session.id,
+      data.isPublic ? "PUBLIC_PROFILE_ENABLED" : "PUBLIC_PROFILE_DISABLED",
+      session.id,
+    );
+  }
+
+  return profile;
 }
 
 export async function requestAccountDeletion(
@@ -253,13 +329,10 @@ export async function requestAccountDeletion(
   const updated = await prisma.user.update({
     where: { id: session.id },
     data: {
+      // O perfil público já fica indisponível por accountStatus != ACTIVE (§93);
+      // a preferência isPublic do usuário é preservada.
       accountStatus: AccountStatus.DELETION_PENDING,
       deletionRequestedAt: new Date(),
-      profile: {
-        update: {
-          isPublic: false,
-        },
-      },
     },
     select: {
       accountStatus: true,
@@ -300,11 +373,6 @@ export async function cancelAccountDeletion(
     data: {
       accountStatus: AccountStatus.ACTIVE,
       deletionRequestedAt: null,
-      profile: {
-        update: {
-          isPublic: true,
-        },
-      },
     },
     select: { accountStatus: true },
   });

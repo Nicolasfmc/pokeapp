@@ -12,6 +12,9 @@ import type {
 
 const DEFAULT_CONCURRENCY = 8;
 
+/** Pokémon TCG Pocket (`tcgp`) é um jogo digital: não existe carta física para o Inventory. */
+export const DEFAULT_EXCLUDED_SERIES = ["tcgp"];
+
 const SUPPORTED_LANGUAGES = new Set<string>([
   "en",
   "fr",
@@ -46,6 +49,25 @@ export type TCGdexProviderOptions = {
   client?: TCGdex;
 };
 
+async function withRetry<T>(label: string, fn: () => Promise<T>, attempts = 6): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (error instanceof TcgdexNotFoundError) throw error;
+      lastError = error;
+      if (attempt < attempts) {
+        // backoff exponencial com jitter: ~0.5s, 1s, 2s, 4s, 8s
+        const delay = 500 * 2 ** (attempt - 1) + Math.random() * 250;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+  }
+  console.warn(`[tcgdex] ${label} falhou após ${attempts} tentativas`);
+  throw lastError;
+}
+
 function asSetInput(value: object): TcgdexSetNormalizeInput {
   return value as TcgdexSetNormalizeInput;
 }
@@ -71,7 +93,7 @@ export class TCGdexProvider implements CardDataProvider {
   }
 
   async getCard(id: string): Promise<ExternalCard> {
-    const card = await this.client.card.get(id);
+    const card = await withRetry(`card ${id}`, () => this.client.card.get(id));
     if (!card) {
       throw new TcgdexNotFoundError("card", id);
     }
@@ -79,7 +101,7 @@ export class TCGdexProvider implements CardDataProvider {
   }
 
   async getSet(id: string): Promise<ExternalSet> {
-    const set = await this.client.set.get(id);
+    const set = await withRetry(`set ${id}`, () => this.client.set.get(id));
     if (!set) {
       throw new TcgdexNotFoundError("set", id);
     }
@@ -100,25 +122,43 @@ export class TCGdexProvider implements CardDataProvider {
     });
   }
 
-  async listSeriesThenSetsThenCards(): Promise<{
+  async listSeriesThenSetsThenCards(
+    options: { setIds?: string[]; excludedSeriesIds?: string[] } = {},
+  ): Promise<{
     sets: ExternalSet[];
     cards: ExternalCard[];
+    unavailableCardIds: string[];
   }> {
-    const seriesResumes = await this.client.serie.list();
+    const excluded = new Set(
+      (options.excludedSeriesIds ?? DEFAULT_EXCLUDED_SERIES).map((id) =>
+        id.trim().toLowerCase(),
+      ),
+    );
+    const onlySets = options.setIds?.length
+      ? new Set(options.setIds.map((id) => id.trim().toLowerCase()))
+      : null;
+    const seriesResumes = (await this.client.serie.list()).filter(
+      (serie) => !excluded.has(serie.id.toLowerCase()),
+    );
     const setIds = new Set<string>();
 
     await mapPool(seriesResumes, this.concurrency, async (serieResume) => {
-      const serie = await this.client.serie.get(serieResume.id);
+      const serie = await withRetry(`serie ${serieResume.id}`, () =>
+        this.client.serie.get(serieResume.id),
+      );
       if (!serie?.sets) {
         return;
       }
       for (const setResume of serie.sets) {
+        if (onlySets && !onlySets.has(setResume.id.toLowerCase())) {
+          continue;
+        }
         setIds.add(setResume.id);
       }
     });
 
     const fullSets = await mapPool([...setIds], this.concurrency, async (setId) => {
-      const set = await this.client.set.get(setId);
+      const set = await withRetry(`set ${setId}`, () => this.client.set.get(setId));
       if (!set) {
         throw new TcgdexNotFoundError("set", setId);
       }
@@ -135,6 +175,9 @@ export class TCGdexProvider implements CardDataProvider {
     }
 
     const skippedCardIds: string[] = [];
+    const failedCardIds: string[] = [];
+    let fetched = 0;
+    const total = cardIds.size;
     const maybeCards = await mapPool([...cardIds], this.concurrency, async (cardId) => {
       try {
         return await this.getCard(cardId);
@@ -145,7 +188,15 @@ export class TCGdexProvider implements CardDataProvider {
           skippedCardIds.push(cardId);
           return null;
         }
-        throw error;
+        // Erro transitório que sobreviveu aos retries: pula a carta, mas ela
+        // NÃO é tratada como removida (ver `unavailableCardIds`).
+        failedCardIds.push(cardId);
+        return null;
+      } finally {
+        fetched += 1;
+        if (fetched % 1000 === 0) {
+          console.log(`[tcgdex] baixadas ${fetched}/${total}`);
+        }
       }
     });
     const cards = maybeCards.filter((card): card is ExternalCard => card !== null);
@@ -155,7 +206,12 @@ export class TCGdexProvider implements CardDataProvider {
         `[tcgdex] ${skippedCardIds.length} card(s) not found upstream and skipped: ${skippedCardIds.join(", ")}`,
       );
     }
+    if (failedCardIds.length > 0) {
+      console.warn(
+        `[tcgdex] ${failedCardIds.length} card(s) falharam por erro de rede/servidor e serão tentadas no próximo sync: ${failedCardIds.join(", ")}`,
+      );
+    }
 
-    return { sets, cards };
+    return { sets, cards, unavailableCardIds: failedCardIds };
   }
 }

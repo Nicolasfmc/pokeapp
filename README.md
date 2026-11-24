@@ -46,6 +46,27 @@ npm run dev
 
 Abra [http://localhost:3000](http://localhost:3000).
 
+PostgreSQL local rápido com Docker:
+
+```bash
+docker run -d --name pokeapp-postgres -e POSTGRES_USER=pokeapp -e POSTGRES_PASSWORD=pokeapp \
+  -e POSTGRES_DB=pokeapp -p 5432:5432 -v pokeapp-pgdata:/var/lib/postgresql/data postgres:17-alpine
+# DATABASE_URL="postgresql://pokeapp:pokeapp@localhost:5432/pokeapp?schema=public"
+```
+
+### Sync TCGdex
+
+- Catálogo completo (~21k cartas, alguns minutos): `npm run sync:tcgdex`.
+- Sync parcial por set (rápido, para dev; não desativa nada fora do recorte):
+  `npm run sync:tcgdex -- --sets=sv05,sv06,me01,mee`.
+- Séries do **Pokémon TCG Pocket** (`tcgp`) são ignoradas por padrão (não são cartas físicas).
+  Sobrescreva com `--exclude-series=` ou `TCGDEX_EXCLUDED_SERIES`.
+- Cada carta é classificada como `NEW`, `UPDATED`, `UNCHANGED` ou `REMOVED` (§11.2);
+  cartas inalteradas não são regravadas. Removidas viram `isActive=false`, nunca são apagadas.
+- Erros transitórios da API têm retry com backoff; cartas que ainda falharem são
+  puladas e **não** são marcadas como removidas (entram no próximo sync).
+- Energias básicas ("Basic Fire Energy" / "Fire Energy") compartilham a mesma carta lógica (§18).
+
 ### Scripts úteis
 
 | Script | Descrição |
@@ -53,7 +74,7 @@ Abra [http://localhost:3000](http://localhost:3000).
 | `npm run dev` | Dev server |
 | `npm run build` / `npm start` | Build e produção |
 | `npm run lint` | ESLint |
-| `npm test` | Vitest |
+| `npm test` | Vitest (unitários; integração com banco: `RUN_DB_TESTS=1 npm test`) |
 | `npm run prisma:migrate` | Migrations (dev) |
 | `npm run prisma:migrate:deploy` | Migrations (deploy) |
 | `npm run prisma:seed` | Seed (formatos/regras base) |

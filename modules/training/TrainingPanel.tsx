@@ -14,6 +14,7 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
+import type { BattleLogPreview } from "@/server/services/match";
 import type {
   ArchetypeDto,
   DeckOption,
@@ -89,6 +90,9 @@ export function TrainingPanel({
   const [newArchetypeName, setNewArchetypeName] = useState("");
   const [notes, setNotes] = useState("");
   const [playedAt, setPlayedAt] = useState("");
+  const [preview, setPreview] = useState<BattleLogPreview | null>(null);
+  const [reviewResult, setReviewResult] = useState<string | null>(null);
+  const [reviewTurnOrder, setReviewTurnOrder] = useState<string | null>(null);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDeckId, setEditDeckId] = useState<string | null>(null);
@@ -142,10 +146,55 @@ export function TrainingPanel({
     return data.archetype.id;
   }
 
+  /** §68 — passo 1: analisa o log e sugere o arquétipo (nada é salvo). */
+  async function onAnalyze() {
+    setError(null);
+    setMessage(null);
+    if (!rawLog.trim()) {
+      setError("Cole o battle log do TCG Live.");
+      return;
+    }
+    setPending(true);
+    try {
+      const response = await fetch("/api/training/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rawLog, viewerName: viewerName.trim() }),
+      });
+      const data = (await response.json()) as {
+        preview?: BattleLogPreview;
+        error?: string;
+      };
+      if (!response.ok || !data.preview) {
+        setError(data.error ?? "Falha ao analisar log.");
+        setPreview(null);
+        return;
+      }
+      setPreview(data.preview);
+      setReviewResult(data.preview.result);
+      setReviewTurnOrder(data.preview.turnOrder);
+      if (data.preview.suggestedArchetype) {
+        setOpponentArchetypeId(data.preview.suggestedArchetype.archetypeId);
+        setNewArchetypeName("");
+      } else {
+        setOpponentArchetypeId(null);
+      }
+    } catch {
+      setError("Não foi possível analisar o log.");
+    } finally {
+      setPending(false);
+    }
+  }
+
   async function onImport(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     setMessage(null);
+
+    if (!preview) {
+      await onAnalyze();
+      return;
+    }
 
     if (!deckId) {
       setError("Selecione um deck.");
@@ -172,7 +221,9 @@ export function TrainingPanel({
           viewerName: viewerName.trim(),
           opponentArchetypeId: archetypeId,
           notes: notes.trim() || null,
-          playedAt: playedAt.trim() || null,
+          playedAt: playedAt ? new Date(playedAt).toISOString() : null,
+          result: reviewResult ?? undefined,
+          turnOrder: reviewTurnOrder,
         }),
       });
       const data = (await response.json()) as {
@@ -190,6 +241,8 @@ export function TrainingPanel({
       setRawLog("");
       setNotes("");
       setPlayedAt("");
+      setPreview(null);
+      setOpponentArchetypeId(null);
       setMessage(
         data.parseOk === false
           ? "Match criado com avisos no parse."
@@ -308,18 +361,25 @@ export function TrainingPanel({
           <Title order={4}>Importar battle log</Title>
           <Textarea
             label="Battle log (TCG Live)"
+            description="No TCG Live: tela de resultado → Exportar log (copia para a área de transferência)."
             minRows={8}
             value={rawLog}
-            onChange={(event) => setRawLog(event.currentTarget.value)}
+            onChange={(event) => {
+              setRawLog(event.currentTarget.value);
+              setPreview(null);
+            }}
             required
             styles={{ input: { fontFamily: "var(--font-ibm-plex-mono)" } }}
           />
-          <Group grow align="flex-start">
+          <Group grow align="flex-start" className="flex-wrap">
             <TextInput
-              label="viewerName (nome no log)"
+              label="Seu nome no TCG Live"
               description="Necessário para WIN/LOSS e FIRST/SECOND"
               value={viewerName}
-              onChange={(event) => setViewerName(event.currentTarget.value)}
+              onChange={(event) => {
+                setViewerName(event.currentTarget.value);
+                setPreview(null);
+              }}
               required
             />
             <Select
@@ -332,7 +392,59 @@ export function TrainingPanel({
               required
             />
           </Group>
-          <Group grow align="flex-start">
+          {!preview ? (
+            <Group>
+              <Button onClick={onAnalyze} loading={pending} disabled={!rawLog.trim()}>
+                Analisar log
+              </Button>
+              <Text size="xs" c="dimmed">
+                Extrai jogadores, resultado, ordem de turno, formato e Pokémon do oponente.
+              </Text>
+            </Group>
+          ) : (
+            <Stack
+              gap="xs"
+              className="rounded-lg border border-[var(--poke-line)] bg-[var(--poke-accent-soft)]/40 p-3"
+            >
+              <Text fw={600} size="sm">
+                {preview.player1} vs {preview.player2}
+                {preview.gameFormatCode ? ` · ${preview.gameFormatCode}` : ""} · parser{" "}
+                {preview.parserVersion}
+              </Text>
+              {preview.warnings.map((warning) => (
+                <Text key={warning} size="xs" c="orange">
+                  {warning}
+                </Text>
+              ))}
+              <Text size="sm">
+                Oponente: <b>{preview.opponent ?? "?"}</b>
+                {preview.opponentPokemon.length > 0
+                  ? ` — Pokémon detectados: ${preview.opponentPokemon.join(", ")}`
+                  : " — nenhum Pokémon detectado no log"}
+              </Text>
+              <Text size="sm">
+                {preview.suggestedArchetype
+                  ? `Arquétipo sugerido: ${preview.suggestedArchetype.name} (revise abaixo)`
+                  : "Sem sugestão automática: selecione ou crie o arquétipo."}
+              </Text>
+              <Group grow align="flex-start" className="flex-wrap">
+                <Select
+                  label="Resultado"
+                  data={RESULT_OPTIONS}
+                  value={reviewResult}
+                  onChange={setReviewResult}
+                />
+                <Select
+                  label="Ordem de turno"
+                  data={TURN_OPTIONS}
+                  value={reviewTurnOrder}
+                  onChange={setReviewTurnOrder}
+                  clearable
+                />
+              </Group>
+            </Stack>
+          )}
+          <Group grow align="flex-start" className="flex-wrap">
             <Select
               label="Arquétipo do oponente"
               data={archetypeOptions}
@@ -351,10 +463,10 @@ export function TrainingPanel({
               }
             />
           </Group>
-          <Group grow align="flex-start">
+          <Group grow align="flex-start" className="flex-wrap">
             <TextInput
-              label="Jogada em (ISO opcional)"
-              placeholder="2026-09-09T15:00:00.000Z"
+              type="datetime-local"
+              label="Jogada em (opcional)"
               value={playedAt}
               onChange={(event) => setPlayedAt(event.currentTarget.value)}
             />
@@ -369,8 +481,12 @@ export function TrainingPanel({
             interno do deck.
           </Text>
           <Group>
-            <Button type="submit" loading={pending} disabled={decks.length === 0}>
-              Importar e criar Match
+            <Button
+              type="submit"
+              loading={pending}
+              disabled={decks.length === 0 || !preview}
+            >
+              Salvar partida
             </Button>
             {decks.length === 0 ? (
               <Text size="sm" c="dimmed">

@@ -2,13 +2,17 @@
 
 import { FormEvent, useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Alert,
+  Anchor,
   Button,
   Divider,
   Group,
   Stack,
+  Switch,
   Text,
+  Textarea,
   TextInput,
   Title,
 } from "@mantine/core";
@@ -21,6 +25,7 @@ export type AccountSettingsUser = {
   usernameChangedAt: string | null;
   deletionRequestedAt: string | null;
   displayName: string;
+  bio?: string | null;
   isPublic: boolean;
 };
 
@@ -36,7 +41,39 @@ export function AccountSettingsPanel({
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [username, setUsername] = useState(initialUser.username);
+  const [displayName, setDisplayName] = useState(initialUser.displayName);
+  const [bio, setBio] = useState(initialUser.bio ?? "");
+  const [isPublic, setIsPublic] = useState(initialUser.isPublic);
   const [pending, setPending] = useState(false);
+
+  async function onSaveProfile(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setActionError(null);
+    setActionMessage(null);
+    setPending(true);
+    try {
+      const response = await fetch("/api/auth/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ displayName, bio, isPublic }),
+      });
+      const data = (await response.json()) as {
+        profile?: { displayName: string; bio: string | null; isPublic: boolean };
+        error?: string;
+      };
+      if (!response.ok || !data.profile) {
+        setActionError(data.error ?? "Falha ao salvar perfil.");
+        return;
+      }
+      setUser((prev) => ({ ...prev, ...data.profile! }));
+      setActionMessage("Perfil atualizado.");
+      router.refresh();
+    } catch {
+      setActionError("Não foi possível salvar o perfil.");
+    } finally {
+      setPending(false);
+    }
+  }
 
   async function refreshUser() {
     const response = await fetch("/api/auth/me");
@@ -181,11 +218,47 @@ export function AccountSettingsPanel({
           Status
         </Text>
         <Text fw={600}>{user.accountStatus}</Text>
-        <Text size="sm" c="dimmed" mt="sm">
-          Nome de exibição
-        </Text>
-        <Text fw={600}>{user.displayName}</Text>
       </Stack>
+
+      <Divider />
+
+      <form onSubmit={onSaveProfile}>
+        <Stack gap="md">
+          <Title order={4}>Perfil público</Title>
+          <TextInput
+            label="Nome de exibição"
+            description="Pode ser alterado livremente; não muda a URL."
+            value={displayName}
+            maxLength={60}
+            required
+            onChange={(event) => setDisplayName(event.currentTarget.value)}
+          />
+          <Textarea
+            label="Bio"
+            value={bio}
+            maxLength={500}
+            autosize
+            minRows={2}
+            onChange={(event) => setBio(event.currentTarget.value)}
+          />
+          <Switch
+            label="Perfil público habilitado"
+            description="Mostra apenas cartas disponíveis para troca (acima da reserva competitiva)."
+            checked={isPublic}
+            onChange={(event) => setIsPublic(event.currentTarget.checked)}
+          />
+          <Group>
+            <Button type="submit" variant="light" loading={pending}>
+              Salvar perfil
+            </Button>
+            {user.isPublic && !deletionPending ? (
+              <Anchor component={Link} href={`/user/${user.username}`} size="sm">
+                Ver /user/{user.username}
+              </Anchor>
+            ) : null}
+          </Group>
+        </Stack>
+      </form>
 
       <Divider />
 

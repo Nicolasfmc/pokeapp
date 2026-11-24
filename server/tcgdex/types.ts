@@ -24,6 +24,8 @@ export interface ExternalCard {
   legalExpanded: boolean;
   imageUrl: string | null;
   tcgdexUpdatedAt: string | null;
+  /** TCGdex `energyType` ("Normal" = basic energy, "Special"). Null for non-energy cards. */
+  energyType?: string | null;
 }
 
 export interface CardDataProvider {
@@ -55,6 +57,7 @@ export interface TcgdexCardNormalizeInput {
   image?: string | null;
   updated?: string | null;
   legal?: { standard?: boolean; expanded?: boolean } | null;
+  energyType?: string | null;
   set: { id: string };
 }
 
@@ -69,9 +72,18 @@ export interface SyncStats {
   cardsUpserted: number;
   cardsDeactivated: number;
   logicalsCreated: number;
+  /** §11.2 — classificação por carta. */
+  cardsNew: number;
+  cardsUpdated: number;
+  cardsUnchanged: number;
+  cardsRemoved: number;
 }
 
 export interface SyncOptions {
   concurrency?: number;
   language?: string;
+  /** Restringe o sync a estes set ids da TCGdex (sync parcial: não desativa o resto). */
+  setIds?: string[];
+  /** Séries TCGdex ignoradas (default: `tcgp`, Pokémon TCG Pocket — não é carta física). */
+  excludedSeriesIds?: string[];
 }
