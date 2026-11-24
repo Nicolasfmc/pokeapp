@@ -42,7 +42,7 @@ export function CardsSearchView({ initialSets, result }: CardsSearchViewProps) {
         </Text>
 
         {result.mode === "logical" ? (
-          <SimpleGrid cols={{ base: 2, sm: 3, md: 4, lg: 6 }} spacing="lg">
+          <SimpleGrid cols={{ base: 3, sm: 3, md: 4, lg: 6 }} spacing={{ base: "xs", sm: "lg" }}>
             {(result.items as CardLogicalDto[]).map((logical) => (
               <Link
                 key={logical.id}
@@ -69,7 +69,7 @@ export function CardsSearchView({ initialSets, result }: CardsSearchViewProps) {
             ))}
           </SimpleGrid>
         ) : (
-          <SimpleGrid cols={{ base: 2, sm: 3, md: 4, lg: 6 }} spacing="lg">
+          <SimpleGrid cols={{ base: 3, sm: 3, md: 4, lg: 6 }} spacing={{ base: "xs", sm: "lg" }}>
             {(result.items as CardPrintingDto[]).map((printing) => (
               <CardPrintingThumb key={printing.id} printing={printing} />
             ))}

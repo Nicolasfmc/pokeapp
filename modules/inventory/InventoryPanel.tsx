@@ -434,7 +434,7 @@ export function InventoryPanel({
           Nenhum item no inventário.
         </Text>
       ) : (
-        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+        <div className="grid grid-cols-4 gap-2 sm:grid-cols-4 sm:gap-3 md:grid-cols-5 lg:grid-cols-6">
           {groups.map((group) => {
             const single = group.items.length === 1 ? group.items[0] : null;
             return (

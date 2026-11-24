@@ -62,7 +62,7 @@ export function PublicProfileView({
           {inventory.length === 0 ? (
             <Text c="dimmed">Nenhuma carta disponível para troca.</Text>
           ) : (
-            <ul className="m-0 grid list-none grid-cols-3 gap-3 p-0 sm:grid-cols-4 md:grid-cols-5">
+            <ul className="m-0 grid list-none grid-cols-4 gap-2 p-0 sm:grid-cols-4 sm:gap-3 md:grid-cols-5">
               {inventory.map((item) => (
                 <li key={item.card.id} className="min-w-0">
                   <CardImage
