@@ -1,24 +1,26 @@
 "use client";
 
-import { FormEvent, useEffect, useState, startTransition } from "react";
+import { FormEvent, useEffect, useMemo, useState, startTransition } from "react";
 import {
   ActionIcon,
   Alert,
   Button,
   Group,
   NumberInput,
+  Modal,
   Select,
   Stack,
-  Table,
+  Switch,
   Text,
   TextInput,
   Title,
   Badge,
   SegmentedControl,
-  Collapse,
   Paper,
 } from "@mantine/core";
 import { PrintingPicker } from "./PrintingPicker";
+import { DEFAULT_CARD_LANGUAGE, LanguageFlag, LanguageSelect } from "./languages";
+import { CardImage, CardThumb } from "@/modules/cards/ui/CardImage";
 
 export type InventoryItemDto = {
   id: string;
@@ -47,6 +49,16 @@ export type InventoryItemDto = {
     protectedQuantity: number;
     availableForTrade: number;
   };
+};
+
+type InventoryGroup = {
+  key: string;
+  name: string;
+  imageUrl: string | null;
+  items: InventoryItemDto[];
+  quantity: number;
+  sleeved: number;
+  availability: InventoryItemDto["logicalAvailability"];
 };
 
 type TransactionDto = {
@@ -96,13 +108,48 @@ export function InventoryPanel({
   const [cardPrintingId, setCardPrintingId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState<number | string>(1);
   const [condition, setCondition] = useState<string | null>("NM");
-  const [language, setLanguage] = useState("en");
+  const [language, setLanguage] = useState(DEFAULT_CARD_LANGUAGE);
+  const [unify, setUnify] = useState(true);
+  const [openGroupKey, setOpenGroupKey] = useState<string | null>(null);
   const [collectionStatus, setCollectionStatus] = useState<string | null>(
     "COMPETITIVE",
   );
   const [reason, setReason] = useState<string | null>("PURCHASE");
   const [note, setNote] = useState("");
   const [adjustReason, setAdjustReason] = useState<string | null>("CORRECTION");
+
+  const groups = useMemo(() => {
+    const map = new Map<string, InventoryGroup>();
+    for (const item of items) {
+      // Unificado: uma entrada por carta lógica (mesma carta em várias coleções).
+      const key = unify ? item.cardPrinting.logicalCardId : item.id;
+      let group = map.get(key);
+      if (!group) {
+        group = {
+          key,
+          name: item.cardPrinting.name,
+          imageUrl: null,
+          items: [],
+          quantity: 0,
+          sleeved: 0,
+          availability: item.logicalAvailability,
+        };
+        map.set(key, group);
+      }
+      group.items.push(item);
+      group.quantity += item.quantity;
+      group.sleeved += item.sleevedAllocatedQuantity;
+    }
+    for (const group of map.values()) {
+      const withImage = [...group.items]
+        .filter((i) => i.cardPrinting.imageUrl)
+        .sort((a, b) => b.quantity - a.quantity);
+      group.imageUrl = withImage[0]?.cardPrinting.imageUrl ?? null;
+    }
+    return [...map.values()];
+  }, [items, unify]);
+
+  const openGroup = groups.find((g) => g.key === openGroupKey) ?? null;
 
   async function reloadItems(
     nextFilter: typeof filter = filter,
@@ -309,11 +356,7 @@ export function InventoryPanel({
                 onChange={setCondition}
                 allowDeselect={false}
               />
-              <TextInput
-                label="Idioma"
-                value={language}
-                onChange={(event) => setLanguage(event.currentTarget.value)}
-              />
+              <LanguageSelect value={language} onChange={setLanguage} />
             </div>
             <div className="grid grid-cols-2 items-end gap-3 sm:grid-cols-4">
               <Select
@@ -348,6 +391,7 @@ export function InventoryPanel({
       </Paper>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
         <SegmentedControl
           value={filter}
           onChange={(value) =>
@@ -359,6 +403,13 @@ export function InventoryPanel({
             { label: "Collection", value: "COLLECTION" },
           ]}
         />
+        <Switch
+          label="Unificar coleções"
+          description="Mesma carta em vários sets vira um card só"
+          checked={unify}
+          onChange={(event) => setUnify(event.currentTarget.checked)}
+        />
+        </div>
         <div className="grid grid-cols-2 gap-3 sm:flex sm:items-end">
           <Select
             label="Motivo do ajuste ±"
@@ -378,256 +429,187 @@ export function InventoryPanel({
         </div>
       </div>
 
-      {/* Mobile (§98: Inventory Desktop ≈ Mobile): cards com [−] [qtd] [+] à mão (§38). */}
-      <Stack gap="sm" className="sm:hidden">
-        {items.length === 0 ? (
-          <Text c="dimmed" py="md">
-            Nenhum item no inventário.
-          </Text>
-        ) : (
-          items.map((item) => (
-            <Paper
-              key={item.id}
-              p="sm"
-              radius="md"
-              className="border border-[var(--poke-line)] bg-[var(--poke-panel)]"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <Text fw={600} className="truncate">
-                    {item.cardPrinting.name}
-                  </Text>
-                  <Text size="xs" c="dimmed">
-                    {item.cardPrinting.set.code ?? item.cardPrinting.set.name} · #
-                    {item.cardPrinting.localId} · {item.language}
-                  </Text>
-                  <Group gap={4} mt={4}>
-                    <Badge variant="light" size="sm">
-                      {item.condition}
-                    </Badge>
+      {groups.length === 0 ? (
+        <Text c="dimmed" py="md">
+          Nenhum item no inventário.
+        </Text>
+      ) : (
+        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+          {groups.map((group) => {
+            const single = group.items.length === 1 ? group.items[0] : null;
+            return (
+              <button
+                key={group.key}
+                type="button"
+                onClick={() => setOpenGroupKey(group.key)}
+                aria-label={`Abrir ${group.name}`}
+                className="group min-w-0 cursor-pointer border-0 bg-transparent p-0 text-left text-[var(--poke-ink)] transition-transform hover:-translate-y-0.5"
+              >
+                <CardImage
+                  src={group.imageUrl}
+                  alt={group.name}
+                  dimmed={group.quantity === 0}
+                  sizes="(max-width: 640px) 30vw, 150px"
+                  className="group-hover:ring-2 group-hover:ring-[var(--poke-accent)]"
+                >
+                  <span className="absolute bottom-1 left-1/2 min-w-8 -translate-x-1/2 rounded-full bg-black/75 px-2 py-0.5 text-center text-sm font-bold text-white shadow">
+                    ×{group.quantity}
+                  </span>
+                  {group.sleeved > 0 ? (
                     <Badge
-                      variant="light"
-                      size="sm"
-                      color={item.collectionStatus === "COMPETITIVE" ? "ember" : "ink"}
+                      size="xs"
+                      color="green"
+                      variant="filled"
+                      className="absolute left-1 top-1"
                     >
-                      {item.collectionStatus}
+                      {group.sleeved} sleeved
                     </Badge>
+                  ) : null}
+                </CardImage>
+                <Text size="xs" fw={600} mt={4} lineClamp={1}>
+                  {group.name}
+                </Text>
+                <Group gap={4} wrap="nowrap">
+                  {single ? (
+                    <>
+                      <LanguageFlag code={single.language} width={14} />
+                      <Text size="xs" c="dimmed" truncate>
+                        {single.cardPrinting.set.code ?? single.cardPrinting.set.name} #
+                        {single.cardPrinting.localId} · {single.condition}
+                      </Text>
+                    </>
+                  ) : (
+                    <Text size="xs" c="dimmed" truncate>
+                      {group.items.length} lotes · troca{" "}
+                      {group.availability.availableForTrade}
+                    </Text>
+                  )}
+                </Group>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      <Modal
+        opened={openGroup !== null}
+        onClose={() => {
+          setOpenGroupKey(null);
+          setHistoryItemId(null);
+        }}
+        title={openGroup?.name}
+        size="lg"
+        centered
+      >
+        {openGroup ? (
+          <Stack gap="sm">
+            <Text size="sm" c="dimmed">
+              Carta lógica: owned {openGroup.availability.ownedQuantity} · sleeved{" "}
+              {openGroup.availability.sleevedAllocatedQuantity} · protegidas{" "}
+              {openGroup.availability.protectedQuantity} · disponíveis p/ troca{" "}
+              {openGroup.availability.availableForTrade}
+            </Text>
+            {openGroup.items.map((item) => (
+              <Paper
+                key={item.id}
+                p="sm"
+                radius="md"
+                className="border border-[var(--poke-line)] bg-[var(--poke-panel)]"
+              >
+                <div className="flex items-start gap-3">
+                  <CardThumb
+                    src={item.cardPrinting.imageUrl}
+                    alt={item.cardPrinting.name}
+                    width={56}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <Text fw={600} size="sm" truncate>
+                      {item.cardPrinting.set.name}
+                    </Text>
+                    <Group gap={6} mt={2} wrap="wrap">
+                      <LanguageFlag code={item.language} />
+                      <Text size="xs" c="dimmed">
+                        {item.cardPrinting.set.code ?? "—"} #{item.cardPrinting.localId}
+                      </Text>
+                      <Badge variant="light" size="sm">
+                        {item.condition}
+                      </Badge>
+                      <Badge
+                        variant="light"
+                        size="sm"
+                        color={item.collectionStatus === "COMPETITIVE" ? "ember" : "ink"}
+                      >
+                        {item.collectionStatus}
+                      </Badge>
+                    </Group>
+                    <Text size="xs" c="dimmed" mt={4}>
+                      Sleeved {item.sleevedAllocatedQuantity}
+                    </Text>
+                  </div>
+                  <Group gap={6} wrap="nowrap" className="shrink-0">
+                    <ActionIcon
+                      size="lg"
+                      variant="default"
+                      aria-label="Diminuir"
+                      disabled={pending || item.quantity <= item.sleevedAllocatedQuantity}
+                      onClick={() => void onAdjust(item.id, -1)}
+                    >
+                      −
+                    </ActionIcon>
+                    <Text fw={700} w={28} ta="center">
+                      {item.quantity}
+                    </Text>
+                    <ActionIcon
+                      size="lg"
+                      variant="default"
+                      aria-label="Aumentar"
+                      disabled={pending}
+                      onClick={() => void onAdjust(item.id, 1)}
+                    >
+                      +
+                    </ActionIcon>
                   </Group>
                 </div>
-                <Group gap={6} wrap="nowrap" className="shrink-0">
-                  <ActionIcon
-                    size="lg"
-                    variant="default"
-                    aria-label="Diminuir"
-                    disabled={pending || item.quantity <= item.sleevedAllocatedQuantity}
-                    onClick={() => void onAdjust(item.id, -1)}
+                <Group justify="flex-end" mt={4}>
+                  <Button
+                    variant="subtle"
+                    size="compact-xs"
+                    onClick={() => void toggleHistory(item.id)}
                   >
-                    −
-                  </ActionIcon>
-                  <Text fw={700} w={28} ta="center">
-                    {item.quantity}
-                  </Text>
-                  <ActionIcon
-                    size="lg"
-                    variant="default"
-                    aria-label="Aumentar"
-                    disabled={pending}
-                    onClick={() => void onAdjust(item.id, 1)}
-                  >
-                    +
-                  </ActionIcon>
+                    {historyItemId === item.id ? "Ocultar histórico" : "Histórico"}
+                  </Button>
                 </Group>
-              </div>
-              <div className="mt-2 flex items-center justify-between gap-2">
-                <Text size="xs" c="dimmed">
-                  Sleeved {item.sleevedAllocatedQuantity} · Troca{" "}
-                  {item.logicalAvailability.availableForTrade} (owned{" "}
-                  {item.logicalAvailability.ownedQuantity}, prot{" "}
-                  {item.logicalAvailability.protectedQuantity})
-                </Text>
-                <Button
-                  variant="subtle"
-                  size="compact-xs"
-                  onClick={() => void toggleHistory(item.id)}
-                >
-                  {historyItemId === item.id ? "Ocultar" : "Histórico"}
-                </Button>
-              </div>
-              {historyItemId === item.id ? (
-                <Stack gap={2} mt="xs" className="border-t border-[var(--poke-line)] pt-2">
-                  {historyLoading ? (
-                    <Text size="xs" c="dimmed">
-                      Carregando…
-                    </Text>
-                  ) : history.length === 0 ? (
-                    <Text size="xs" c="dimmed">
-                      Sem transações.
-                    </Text>
-                  ) : (
-                    history.map((tx) => (
-                      <div key={tx.id} className="flex justify-between gap-2 text-xs">
-                        <span>
-                          {tx.quantityDelta > 0 ? "+" : ""}
-                          {tx.quantityDelta} {tx.reason}
-                          {tx.note ? ` — ${tx.note}` : ""}
-                        </span>
-                        <span className="shrink-0 text-[color-mix(in_srgb,var(--poke-ink)_55%,transparent)]">
-                          {new Date(tx.createdAt).toLocaleDateString("pt-BR")}
-                        </span>
-                      </div>
-                    ))
-                  )}
-                </Stack>
-              ) : null}
-            </Paper>
-          ))
-        )}
-      </Stack>
-
-      <Paper
-        radius="md"
-        className="hidden overflow-x-auto border border-[var(--poke-line)] bg-[var(--poke-panel)] sm:block"
-      >
-        <Table
-          striped
-          highlightOnHover
-          horizontalSpacing="md"
-          verticalSpacing="sm"
-        >
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Carta</Table.Th>
-              <Table.Th>Condição</Table.Th>
-              <Table.Th>Idioma</Table.Th>
-              <Table.Th>Status</Table.Th>
-              <Table.Th>Qtd</Table.Th>
-              <Table.Th>Sleeved</Table.Th>
-              <Table.Th>Trade (lógica)</Table.Th>
-              <Table.Th />
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {items.length === 0 ? (
-              <Table.Tr>
-                <Table.Td colSpan={8}>
-                  <Text c="dimmed" py="md">
-                    Nenhum item no inventário.
-                  </Text>
-                </Table.Td>
-              </Table.Tr>
-            ) : (
-              items.map((item) => (
-                <Table.Tr key={item.id}>
-                  <Table.Td>
-                    <Stack gap={2}>
-                      <Text fw={600}>{item.cardPrinting.name}</Text>
-                      <Text size="sm" c="dimmed">
-                        {item.cardPrinting.set.code ??
-                          item.cardPrinting.set.name}{" "}
-                        · #{item.cardPrinting.localId} ·{" "}
-                        {item.cardPrinting.tcgdexId}
-                      </Text>
-                    </Stack>
-                  </Table.Td>
-                  <Table.Td>
-                    <Badge variant="light">{item.condition}</Badge>
-                  </Table.Td>
-                  <Table.Td>{item.language}</Table.Td>
-                  <Table.Td>
-                    <Badge
-                      color={
-                        item.collectionStatus === "COMPETITIVE" ? "ember" : "ink"
-                      }
-                      variant="light"
-                    >
-                      {item.collectionStatus}
-                    </Badge>
-                  </Table.Td>
-                  <Table.Td>
-                    <Group gap={6} wrap="nowrap">
-                      <ActionIcon
-                        variant="default"
-                        aria-label="Diminuir"
-                        disabled={
-                          pending ||
-                          item.quantity <= item.sleevedAllocatedQuantity
-                        }
-                        onClick={() => void onAdjust(item.id, -1)}
-                      >
-                        −
-                      </ActionIcon>
-                      <Text fw={600} w={28} ta="center">
-                        {item.quantity}
-                      </Text>
-                      <ActionIcon
-                        variant="default"
-                        aria-label="Aumentar"
-                        disabled={pending}
-                        onClick={() => void onAdjust(item.id, 1)}
-                      >
-                        +
-                      </ActionIcon>
-                    </Group>
-                  </Table.Td>
-                  <Table.Td>{item.sleevedAllocatedQuantity}</Table.Td>
-                  <Table.Td>
-                    <Stack gap={0}>
-                      <Text size="sm">
-                        Disp. {item.logicalAvailability.availableForTrade}
-                      </Text>
+                {historyItemId === item.id ? (
+                  <Stack gap={2} mt="xs" className="border-t border-[var(--poke-line)] pt-2">
+                    {historyLoading ? (
                       <Text size="xs" c="dimmed">
-                        owned {item.logicalAvailability.ownedQuantity} · prot{" "}
-                        {item.logicalAvailability.protectedQuantity}
+                        Carregando…
                       </Text>
-                    </Stack>
-                  </Table.Td>
-                  <Table.Td>
-                    <Button
-                      variant="subtle"
-                      size="compact-sm"
-                      onClick={() => void toggleHistory(item.id)}
-                    >
-                      {historyItemId === item.id ? "Ocultar" : "Histórico"}
-                    </Button>
-                  </Table.Td>
-                </Table.Tr>
-              ))
-            )}
-          </Table.Tbody>
-        </Table>
-      </Paper>
-
-      <Collapse in={historyItemId != null} className="hidden sm:block">
-        <Paper
-          p="md"
-          radius="md"
-          className="border border-[var(--poke-line)] bg-[var(--poke-panel)]"
-        >
-          <Text fw={600} mb="sm">
-            Transações
-          </Text>
-          {historyLoading ? (
-            <Text c="dimmed">Carregando…</Text>
-          ) : history.length === 0 ? (
-            <Text c="dimmed">Sem transações.</Text>
-          ) : (
-            <Stack gap="xs">
-              {history.map((tx) => (
-                <Group key={tx.id} justify="space-between">
-                  <Text>
-                    {tx.quantityDelta > 0 ? "+" : ""}
-                    {tx.quantityDelta} {tx.reason}
-                    {tx.note ? ` — ${tx.note}` : ""}
-                  </Text>
-                  <Text size="sm" c="dimmed">
-                    {new Date(tx.createdAt).toLocaleString("pt-BR")}
-                  </Text>
-                </Group>
-              ))}
-            </Stack>
-          )}
-        </Paper>
-      </Collapse>
+                    ) : history.length === 0 ? (
+                      <Text size="xs" c="dimmed">
+                        Sem transações.
+                      </Text>
+                    ) : (
+                      history.map((tx) => (
+                        <div key={tx.id} className="flex justify-between gap-2 text-xs">
+                          <span>
+                            {tx.quantityDelta > 0 ? "+" : ""}
+                            {tx.quantityDelta} {tx.reason}
+                            {tx.note ? ` — ${tx.note}` : ""}
+                          </span>
+                          <span className="shrink-0 text-[color-mix(in_srgb,var(--poke-ink)_55%,transparent)]">
+                            {new Date(tx.createdAt).toLocaleString("pt-BR")}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </Stack>
+                ) : null}
+              </Paper>
+            ))}
+          </Stack>
+        ) : null}
+      </Modal>
     </Stack>
   );
 }

@@ -6,6 +6,7 @@ import type {
   CardSearchResult,
   CardSetDto,
 } from "../types";
+import { CardImage } from "./CardImage";
 import { CardPrintingThumb } from "./CardPrintingThumb";
 import { CardsPagination } from "./CardsPagination";
 import { CardsSearchFilters } from "./CardsSearchFilters";
@@ -29,8 +30,8 @@ export function CardsSearchView({ initialSets, result }: CardsSearchViewProps) {
             Cards
           </Title>
           <Text className="mt-2 max-w-2xl text-[color-mix(in_srgb,var(--poke-ink)_75%,transparent)]">
-            Busca local no catálogo sincronizado — filtros por nome, set,
-            categoria, legalidade e regulation mark.
+            Cartas iguais (reprints e artes alternativas) aparecem unificadas;
+            clique numa carta para escolher uma impressão específica.
           </Text>
         </div>
 
@@ -41,28 +42,32 @@ export function CardsSearchView({ initialSets, result }: CardsSearchViewProps) {
         </Text>
 
         {result.mode === "logical" ? (
-          <Stack gap="xs">
+          <SimpleGrid cols={{ base: 2, sm: 3, md: 4, lg: 6 }} spacing="lg">
             {(result.items as CardLogicalDto[]).map((logical) => (
               <Link
                 key={logical.id}
                 href={`/cards/logical/${logical.id}`}
-                className="flex items-center justify-between gap-3 rounded-xl px-3 py-3 no-underline text-[var(--poke-ink)] ring-1 ring-[var(--poke-line)] transition-colors hover:bg-[color-mix(in_srgb,var(--poke-accent-soft)_55%,transparent)]"
+                className="group flex flex-col gap-2 no-underline text-[var(--poke-ink)] transition-transform hover:-translate-y-0.5"
+                title="Ver todas as impressões"
               >
+                <CardImage
+                  src={logical.imageUrl}
+                  alt={logical.canonicalName}
+                  sizes="(max-width: 640px) 45vw, (max-width: 1024px) 20vw, 160px"
+                />
                 <div>
-                  <Text fw={600}>{logical.canonicalName}</Text>
-                  <Text size="sm" c="dimmed">
-                    {logical.category}
+                  <Text fw={600} size="sm" lineClamp={2} className="leading-snug">
+                    {logical.canonicalName}
+                  </Text>
+                  <Text size="xs" c="dimmed" mt={2}>
                     {logical.printingCount !== undefined
-                      ? ` · ${logical.printingCount} impressão(ões)`
-                      : ""}
+                      ? `${logical.printingCount} impressão(ões) · escolher`
+                      : logical.category}
                   </Text>
                 </div>
-                <Text size="sm" c="dimmed">
-                  Ver
-                </Text>
               </Link>
             ))}
-          </Stack>
+          </SimpleGrid>
         ) : (
           <SimpleGrid cols={{ base: 2, sm: 3, md: 4, lg: 6 }} spacing="lg">
             {(result.items as CardPrintingDto[]).map((printing) => (

@@ -11,6 +11,9 @@ export type DeckCardDto = {
   quantity: number;
   canonicalName: string;
   category: CardCategory;
+  /** Impressão padrão usada como imagem (carta unificada). */
+  printingId: string | null;
+  imageUrl: string | null;
 };
 
 export type DeckDto = {
@@ -26,6 +29,9 @@ export type DeckDto = {
   tags: DeckTagName[];
   cards: DeckCardDto[];
   cardCount: number;
+  coverPrintingId: string | null;
+  /** Capa escolhida ou, sem escolha, o Pokémon com mais cópias. */
+  coverImageUrl: string | null;
   createdAt: string;
   updatedAt: string;
 };

@@ -9,6 +9,7 @@ export type PublicTradeItem = {
   card: {
     id: string;
     name: string;
+    imageUrl: string | null;
   };
   availableQuantity: number;
 };

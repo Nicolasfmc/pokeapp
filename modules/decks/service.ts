@@ -6,6 +6,8 @@ import {
   type CardCategory,
 } from "@prisma/client";
 import { prisma } from "@/server/database";
+import { flattenCandidate, representativeSelect } from "@/modules/cards/service";
+import { pickRepresentative } from "@/modules/cards/representative";
 import { parseLimitlessDecklist } from "@/server/parsers";
 import {
   aggregateByLogicalCard,
@@ -63,10 +65,19 @@ const deckInclude = {
   format: { select: { id: true, code: true, name: true } },
   archetype: { select: { id: true, name: true } },
   tags: { select: { tag: true } },
+  coverPrinting: { select: { id: true, imageUrl: true } },
   cards: {
     include: {
       logicalCard: {
-        select: { id: true, canonicalName: true, category: true },
+        select: {
+          id: true,
+          canonicalName: true,
+          category: true,
+          printings: {
+            where: { isActive: true, imageUrl: { not: null } },
+            select: representativeSelect,
+          },
+        },
       },
     },
     orderBy: [
@@ -78,14 +89,38 @@ const deckInclude = {
 
 type DeckWithRelations = Prisma.DeckGetPayload<{ include: typeof deckInclude }>;
 
+function deckFormatKey(code: string): "standard" | "expanded" | null {
+  const normalized = code.toLowerCase();
+  return normalized === "standard" || normalized === "expanded"
+    ? normalized
+    : null;
+}
+
+function defaultCover(cards: DeckCardDto[]): string | null {
+  const withImage = cards.filter((c) => c.imageUrl);
+  const pokemon = withImage
+    .filter((c) => c.category === "POKEMON")
+    .sort((a, b) => b.quantity - a.quantity);
+  return (pokemon[0] ?? withImage[0])?.imageUrl ?? null;
+}
+
 function toDeckDto(deck: DeckWithRelations): DeckDto {
-  const cards: DeckCardDto[] = deck.cards.map((card) => ({
-    id: card.id,
-    logicalCardId: card.logicalCardId,
-    quantity: card.quantity,
-    canonicalName: card.logicalCard.canonicalName,
-    category: card.logicalCard.category,
-  }));
+  const format = deckFormatKey(deck.format.code);
+  const cards: DeckCardDto[] = deck.cards.map((card) => {
+    const rep = pickRepresentative(
+      card.logicalCard.printings.map(flattenCandidate),
+      format,
+    );
+    return {
+      id: card.id,
+      logicalCardId: card.logicalCardId,
+      quantity: card.quantity,
+      canonicalName: card.logicalCard.canonicalName,
+      category: card.logicalCard.category,
+      printingId: rep?.id ?? null,
+      imageUrl: rep?.imageUrl ?? null,
+    };
+  });
 
   return {
     id: deck.id,
@@ -100,6 +135,8 @@ function toDeckDto(deck: DeckWithRelations): DeckDto {
     tags: deck.tags.map((t) => t.tag),
     cards,
     cardCount: cards.reduce((sum, c) => sum + c.quantity, 0),
+    coverPrintingId: deck.coverPrintingId,
+    coverImageUrl: deck.coverPrinting?.imageUrl ?? defaultCover(cards),
     createdAt: deck.createdAt.toISOString(),
     updatedAt: deck.updatedAt.toISOString(),
   };
@@ -359,11 +396,45 @@ export async function updateDeck(
     description?: unknown;
     tags?: unknown;
     archetypeId?: unknown;
+    coverPrintingId?: unknown;
   },
 ): Promise<DeckDto> {
   await getOwnedDeck(userId, deckId);
 
   const data: Prisma.DeckUpdateInput = {};
+
+  if (input.coverPrintingId !== undefined) {
+    if (input.coverPrintingId === null) {
+      data.coverPrinting = { disconnect: true };
+    } else if (typeof input.coverPrintingId === "string") {
+      // A capa tem que ser uma carta que está no deck.
+      const printing = await prisma.cardPrinting.findUnique({
+        where: { id: input.coverPrintingId },
+        select: { logicalCardId: true },
+      });
+      const inDeck = printing
+        ? await prisma.deckCard.findUnique({
+            where: {
+              deckId_logicalCardId: {
+                deckId,
+                logicalCardId: printing.logicalCardId,
+              },
+            },
+            select: { id: true },
+          })
+        : null;
+      if (!inDeck) {
+        throw new DeckServiceError(
+          "A capa precisa ser uma carta do deck.",
+          400,
+          "INVALID_COVER",
+        );
+      }
+      data.coverPrinting = { connect: { id: input.coverPrintingId } };
+    } else {
+      throw new DeckServiceError("coverPrintingId inválido", 400, "INVALID_COVER");
+    }
+  }
 
   if (input.name !== undefined) {
     if (typeof input.name !== "string" || !input.name.trim()) {
@@ -754,6 +825,8 @@ export async function resolvePrintingLine(input: {
     category: result.value.category,
     setCode: result.value.setCode,
     localId: result.value.localId,
+    printingId: result.value.printingId,
+    imageUrl: result.value.imageUrl,
     nameMatched: result.value.nameMatched,
   };
 }

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader, Select } from "@mantine/core";
+import { Group, Loader, Select, Text } from "@mantine/core";
+import { CardThumb } from "@/modules/cards/ui/CardImage";
 
 type PrintingResult = {
   id: string;
@@ -9,6 +10,7 @@ type PrintingResult = {
   localId: string;
   tcgdexId: string;
   rarity: string | null;
+  imageUrl: string | null;
   set?: { code: string | null; name: string };
 };
 
@@ -28,7 +30,9 @@ function labelFor(p: PrintingResult) {
  */
 export function PrintingPicker({ value, onChange }: Props) {
   const [search, setSearch] = useState("");
-  const [options, setOptions] = useState<Array<{ value: string; label: string }>>([]);
+  const [options, setOptions] = useState<
+    Array<{ value: string; label: string; imageUrl: string | null }>
+  >([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -62,7 +66,11 @@ export function PrintingPicker({ value, onChange }: Props) {
         }
         if (response.ok) {
           setOptions(
-            (data.items ?? []).map((p) => ({ value: p.id, label: labelFor(p) })),
+            (data.items ?? []).map((p) => ({
+              value: p.id,
+              label: labelFor(p),
+              imageUrl: p.imageUrl,
+            })),
           );
         }
       } catch {
@@ -78,6 +86,8 @@ export function PrintingPicker({ value, onChange }: Props) {
     // `options`/`value` só servem para não refazer a busca ao selecionar.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
+
+  const selectedImage = options.find((o) => o.value === value)?.imageUrl ?? null;
 
   return (
     <Select
@@ -95,6 +105,19 @@ export function PrintingPicker({ value, onChange }: Props) {
         onChange(next, option?.label ?? null);
       }}
       filter={({ options: all }) => all}
+      maxDropdownHeight={360}
+      leftSection={
+        selectedImage ? <CardThumb src={selectedImage} alt="" width={20} /> : undefined
+      }
+      renderOption={({ option }) => {
+        const image = options.find((o) => o.value === option.value)?.imageUrl;
+        return (
+          <Group gap="sm" wrap="nowrap">
+            <CardThumb src={image} alt={option.label} width={44} />
+            <Text size="sm">{option.label}</Text>
+          </Group>
+        );
+      }}
       nothingFoundMessage={search.trim().length >= 2 && !loading ? "Nenhuma impressão" : undefined}
       rightSection={loading ? <Loader size="xs" /> : undefined}
       className="min-w-[260px] flex-[2]"

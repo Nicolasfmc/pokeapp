@@ -21,11 +21,12 @@ const CATEGORY_OPTIONS = [
 const FORMAT_OPTIONS = [
   { value: "standard", label: "Standard" },
   { value: "expanded", label: "Expanded" },
+  { value: "all", label: "Qualquer" },
 ];
 
 const MODE_OPTIONS = [
-  { value: "printing", label: "Impressões" },
-  { value: "logical", label: "Cartas lógicas" },
+  { value: "logical", label: "Unificar cartas iguais" },
+  { value: "printing", label: "Todas as impressões" },
 ];
 
 function readParam(params: URLSearchParams, key: string) {
@@ -48,9 +49,11 @@ export function CardsSearchFilters({
   const [regulationMark, setRegulationMark] = useState(
     readParam(searchParams, "regulationMark"),
   );
-  const [format, setFormat] = useState(readParam(searchParams, "format"));
+  const [format, setFormat] = useState(
+    readParam(searchParams, "format") || "standard",
+  );
   const [mode, setMode] = useState<CardSearchMode>(
-    (readParam(searchParams, "mode") as CardSearchMode) || "printing",
+    (readParam(searchParams, "mode") as CardSearchMode) || "logical",
   );
 
   const setOptions = initialSets.map((set) => ({
@@ -67,8 +70,8 @@ export function CardsSearchFilters({
     if (regulationMark.trim()) {
       params.set("regulationMark", regulationMark.trim());
     }
-    if (format) params.set("format", format);
-    if (mode && mode !== "printing") params.set("mode", mode);
+    if (format && format !== "standard") params.set("format", format);
+    if (mode && mode !== "logical") params.set("mode", mode);
     if (nextPage > 1) params.set("page", String(nextPage));
 
     const next = params.toString();
@@ -88,8 +91,8 @@ export function CardsSearchFilters({
     setCategory("");
     setRarity("");
     setRegulationMark("");
-    setFormat("");
-    setMode("printing");
+    setFormat("standard");
+    setMode("logical");
     startTransition(() => {
       router.push(pathname);
     });
@@ -129,9 +132,9 @@ export function CardsSearchFilters({
             label="Formato / legalidade"
             placeholder="Qualquer"
             data={FORMAT_OPTIONS}
-            value={format || null}
-            clearable
-            onChange={(value) => setFormat(value ?? "")}
+            value={format}
+            allowDeselect={false}
+            onChange={(value) => setFormat(value ?? "standard")}
           />
           <TextInput
             label="Raridade"
@@ -146,11 +149,12 @@ export function CardsSearchFilters({
             onChange={(event) => setRegulationMark(event.currentTarget.value)}
           />
           <Select
-            label="Modo"
+            label="Exibição"
             data={MODE_OPTIONS}
             value={mode}
+            allowDeselect={false}
             onChange={(value) =>
-              setMode((value as CardSearchMode) || "printing")
+              setMode((value as CardSearchMode) || "logical")
             }
           />
         </SimpleGrid>

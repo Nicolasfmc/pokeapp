@@ -140,7 +140,7 @@ describe.skipIf(!RUN)("integração: deck físico, inventory, training", async (
     const publicItems = await getPublicInventory(`it${suffix}`.slice(0, 20));
     const poffinPublic = publicItems.find((i) => i.card.id === ids.poffinLogical);
     expect(poffinPublic).toEqual({
-      card: { id: ids.poffinLogical, name: `IT Poffin ${suffix}` },
+      card: expect.objectContaining({ id: ids.poffinLogical, name: `IT Poffin ${suffix}` }),
       availableQuantity: 1,
     });
     expect(publicItems.find((i) => i.card.id === ids.nestLogical)).toBeUndefined();

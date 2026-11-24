@@ -1,5 +1,6 @@
 import { Avatar, Stack, Text, Title } from "@mantine/core";
 import type { PublicProfile, PublicTradeItem } from "./types";
+import { CardImage } from "@/modules/cards/ui/CardImage";
 
 type PublicProfileViewProps = {
   profile: PublicProfile;
@@ -61,18 +62,20 @@ export function PublicProfileView({
           {inventory.length === 0 ? (
             <Text c="dimmed">Nenhuma carta disponível para troca.</Text>
           ) : (
-            <ul className="m-0 list-none space-y-2 p-0">
+            <ul className="m-0 grid list-none grid-cols-3 gap-3 p-0 sm:grid-cols-4 md:grid-cols-5">
               {inventory.map((item) => (
-                <li
-                  key={item.card.id}
-                  className="flex items-center justify-between gap-3 rounded-xl px-3 py-3 ring-1 ring-[var(--poke-line)]"
-                >
-                  <Text fw={600}>{item.card.name}</Text>
-                  <Text
-                    size="sm"
-                    className="shrink-0 font-[family-name:var(--font-ibm-plex-mono)] text-[color-mix(in_srgb,var(--poke-ink)_70%,transparent)]"
+                <li key={item.card.id} className="min-w-0">
+                  <CardImage
+                    src={item.card.imageUrl}
+                    alt={item.card.name}
+                    sizes="(max-width: 640px) 30vw, 140px"
                   >
-                    × {item.availableQuantity}
+                    <span className="absolute bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-black/75 px-2 py-0.5 text-sm font-bold text-white shadow">
+                      ×{item.availableQuantity}
+                    </span>
+                  </CardImage>
+                  <Text size="xs" fw={600} mt={4} lineClamp={1} title={item.card.name}>
+                    {item.card.name}
                   </Text>
                 </li>
               ))}

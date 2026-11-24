@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState, startTransition } from "react";
 import {
+  ActionIcon,
   Alert,
   Badge,
   Button,
@@ -12,7 +13,6 @@ import {
   NumberInput,
   Select,
   Stack,
-  Table,
   Text,
   Textarea,
   TextInput,
@@ -21,7 +21,9 @@ import {
 import type { DeckCardDto, DeckDto } from "./types";
 import { DeckSleevePanel } from "./DeckSleevePanel";
 import { DeckInventoryCheckPanel } from "./DeckInventoryCheckPanel";
-import { DeckCardSearch } from "./DeckCardSearch";
+import { DeckCardSearch, type DeckSearchPick } from "./DeckCardSearch";
+import { DeckCoverPicker } from "./DeckCoverPicker";
+import { CardArt, CardImage } from "@/modules/cards/ui/CardImage";
 
 type FormatOption = {
   id: string;
@@ -80,6 +82,7 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
   const [cardsPending, setCardsPending] = useState(false);
   const [resolvePending, setResolvePending] = useState(false);
   const [validatePending, setValidatePending] = useState(false);
+  const [coverOpen, setCoverOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -118,6 +121,41 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
     })).filter((g) => g.cards.length > 0);
   }, [cards]);
 
+  const quantities = useMemo(
+    () => Object.fromEntries(cards.map((c) => [c.logicalCardId, c.quantity])),
+    [cards],
+  );
+
+  function addCopies(card: DeckSearchPick, copies: number) {
+    setCards((prev) => {
+      const existing = prev.find((c) => c.logicalCardId === card.logicalCardId);
+      if (existing) {
+        return prev.map((c) =>
+          c.logicalCardId === card.logicalCardId
+            ? {
+                ...c,
+                quantity: c.quantity + copies,
+                imageUrl: c.imageUrl ?? card.imageUrl,
+                printingId: c.printingId ?? card.printingId,
+              }
+            : c,
+        );
+      }
+      return [
+        ...prev,
+        {
+          id: `tmp-${card.logicalCardId}`,
+          logicalCardId: card.logicalCardId,
+          quantity: copies,
+          canonicalName: card.canonicalName,
+          category: card.category,
+          imageUrl: card.imageUrl,
+          printingId: card.printingId,
+        },
+      ];
+    });
+  }
+
   function toggleTag(tag: string) {
     setTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
@@ -132,10 +170,6 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
         )
         .filter((card) => card.quantity > 0),
     );
-  }
-
-  function removeCard(logicalCardId: string) {
-    setCards((prev) => prev.filter((c) => c.logicalCardId !== logicalCardId));
   }
 
   async function onSaveMeta(event: FormEvent<HTMLFormElement>) {
@@ -259,6 +293,8 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
           logicalCardId: string;
           canonicalName: string;
           category: EditableCard["category"];
+          printingId: string;
+          imageUrl: string | null;
         };
         error?: string;
       };
@@ -268,28 +304,16 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
         return;
       }
 
-      setCards((prev) => {
-        const existing = prev.find(
-          (c) => c.logicalCardId === data.card!.logicalCardId,
-        );
-        if (existing) {
-          return prev.map((c) =>
-            c.logicalCardId === data.card!.logicalCardId
-              ? { ...c, quantity: c.quantity + data.card!.quantity }
-              : c,
-          );
-        }
-        return [
-          ...prev,
-          {
-            id: `tmp-${data.card!.logicalCardId}`,
-            logicalCardId: data.card!.logicalCardId,
-            quantity: data.card!.quantity,
-            canonicalName: data.card!.canonicalName,
-            category: data.card!.category,
-          },
-        ];
-      });
+      addCopies(
+        {
+          logicalCardId: data.card.logicalCardId,
+          canonicalName: data.card.canonicalName,
+          category: data.card.category,
+          printingId: data.card.printingId,
+          imageUrl: data.card.imageUrl,
+        },
+        data.card.quantity,
+      );
       setSetCode("");
       setCollectorNumber("");
       setAddQuantity(1);
@@ -303,6 +327,15 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
 
   return (
     <Stack gap="lg" className="max-w-6xl animate-[poke-rise_0.45s_ease-out]">
+      <DeckCoverPicker
+        deck={deck}
+        opened={coverOpen}
+        onClose={() => setCoverOpen(false)}
+        onChange={(next) => {
+          setDeck(next);
+          startTransition(() => router.refresh());
+        }}
+      />
       <Group justify="space-between" align="flex-start">
         <div>
           <Group gap="sm" mb={4}>
@@ -340,6 +373,27 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
               className="rounded-xl border border-[var(--poke-line)] bg-[var(--poke-panel)]/85 p-4"
             >
               <Text fw={700}>Metadados</Text>
+              <Stack gap={6}>
+                <Text size="sm" fw={500}>
+                  Capa do deck
+                </Text>
+                <button
+                  type="button"
+                  onClick={() => setCoverOpen(true)}
+                  className="cursor-pointer overflow-hidden rounded-lg border-0 p-0 ring-1 ring-[var(--poke-line)] hover:ring-[var(--poke-accent)]"
+                  aria-label="Escolher capa do deck"
+                >
+                  <CardArt src={deck.coverImageUrl} alt={`Capa de ${deck.name}`} />
+                </button>
+                <Button
+                  size="compact-sm"
+                  variant="light"
+                  onClick={() => setCoverOpen(true)}
+                  w="fit-content"
+                >
+                  Escolher capa
+                </Button>
+              </Stack>
               <TextInput
                 label="Nome"
                 value={name}
@@ -429,31 +483,11 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
         </Stack>
 
         <Stack gap="md" style={{ flex: "2 1 480px", minWidth: 0 }}>
-          <DeckInventoryCheckPanel deckId={deck.id} refreshKey={deck.updatedAt} />
-
           <DeckCardSearch
             formatCode={deck.format.code}
+            quantities={quantities}
             onAdd={(card) => {
-              setCards((prev) => {
-                const existing = prev.find((c) => c.logicalCardId === card.logicalCardId);
-                if (existing) {
-                  return prev.map((c) =>
-                    c.logicalCardId === card.logicalCardId
-                      ? { ...c, quantity: c.quantity + 1 }
-                      : c,
-                  );
-                }
-                return [
-                  ...prev,
-                  {
-                    id: `tmp-${card.logicalCardId}`,
-                    logicalCardId: card.logicalCardId,
-                    quantity: 1,
-                    canonicalName: card.canonicalName,
-                    category: card.category,
-                  },
-                ];
-              });
+              addCopies(card, 1);
               setMessage(`Adicionada: ${card.canonicalName} (lembre de salvar as cartas)`);
             }}
           />
@@ -532,52 +566,58 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
                     {group.cards.reduce((s, c) => s + c.quantity, 0)}
                   </Text>
                 </Group>
-                <Table striped highlightOnHover withTableBorder={false}>
-                  <Table.Thead>
-                    <Table.Tr>
-                      <Table.Th style={{ width: 90 }}>Qtd</Table.Th>
-                      <Table.Th>Carta</Table.Th>
-                      <Table.Th style={{ width: 90 }} />
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {group.cards.map((card) => (
-                      <Table.Tr key={card.logicalCardId}>
-                        <Table.Td>
-                          <NumberInput
-                            min={1}
-                            max={99}
-                            value={card.quantity}
-                            onChange={(value) => {
-                              const q =
-                                typeof value === "number" ? value : Number(value);
-                              if (Number.isFinite(q) && q >= 1) {
-                                updateQuantity(card.logicalCardId, q);
-                              }
-                            }}
-                            size="xs"
-                          />
-                        </Table.Td>
-                        <Table.Td>
-                          <Text size="sm">{card.canonicalName}</Text>
-                        </Table.Td>
-                        <Table.Td>
-                          <Button
-                            size="compact-xs"
-                            variant="subtle"
-                            color="red"
-                            onClick={() => removeCard(card.logicalCardId)}
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 xl:grid-cols-6">
+                  {group.cards.map((card) => (
+                    <div key={card.logicalCardId} className="min-w-0">
+                      <CardImage
+                        src={card.imageUrl}
+                        alt={card.canonicalName}
+                        sizes="(max-width: 640px) 30vw, 130px"
+                      >
+                        <div className="absolute inset-x-1 bottom-1 flex items-center justify-between gap-1">
+                          <ActionIcon
+                            size="md"
+                            radius="xl"
+                            variant="filled"
+                            color="dark"
+                            aria-label={`Remover uma cópia de ${card.canonicalName}`}
+                            onClick={() =>
+                              updateQuantity(card.logicalCardId, card.quantity - 1)
+                            }
+                            className="shadow"
                           >
-                            Remover
-                          </Button>
-                        </Table.Td>
-                      </Table.Tr>
-                    ))}
-                  </Table.Tbody>
-                </Table>
+                            −
+                          </ActionIcon>
+                          <span className="min-w-8 rounded-full bg-black/75 px-2 py-0.5 text-center text-base font-bold text-white shadow">
+                            {card.quantity}
+                          </span>
+                          <ActionIcon
+                            size="md"
+                            radius="xl"
+                            variant="filled"
+                            color="ember"
+                            aria-label={`Adicionar uma cópia de ${card.canonicalName}`}
+                            disabled={card.quantity >= 99}
+                            onClick={() =>
+                              updateQuantity(card.logicalCardId, card.quantity + 1)
+                            }
+                            className="shadow"
+                          >
+                            +
+                          </ActionIcon>
+                        </div>
+                      </CardImage>
+                      <Text size="xs" mt={4} lineClamp={1} title={card.canonicalName}>
+                        {card.canonicalName}
+                      </Text>
+                    </div>
+                  ))}
+                </div>
               </Stack>
             ))
           )}
+
+          <DeckInventoryCheckPanel deckId={deck.id} refreshKey={deck.updatedAt} />
         </Stack>
       </Group>
     </Stack>

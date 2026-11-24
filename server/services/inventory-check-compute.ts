@@ -15,6 +15,8 @@ export type InventoryCheckRequirement = {
   canonicalName: string;
   category: string;
   required: number;
+  /** Imagem da impressão padrão (só exibição). */
+  imageUrl?: string | null;
 };
 
 export type InventoryCheckLot = {

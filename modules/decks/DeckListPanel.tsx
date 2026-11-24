@@ -12,6 +12,8 @@ import {
   Title,
 } from "@mantine/core";
 import type { DeckDto } from "./types";
+import { DeckCoverPicker } from "./DeckCoverPicker";
+import { CardArt } from "@/modules/cards/ui/CardImage";
 
 const TAG_LABELS: Record<string, string> = {
   FAVORITE: "Favorito",
@@ -31,6 +33,8 @@ export function DeckListPanel({ initialDecks }: { initialDecks: DeckDto[] }) {
   const [decks, setDecks] = useState(initialDecks);
   const [error, setError] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [coverDeckId, setCoverDeckId] = useState<string | null>(null);
+  const coverDeck = decks.find((d) => d.id === coverDeckId) ?? null;
 
   async function onDelete(deckId: string) {
     setError(null);
@@ -112,25 +116,30 @@ export function DeckListPanel({ initialDecks }: { initialDecks: DeckDto[] }) {
           </Group>
         </Stack>
       ) : (
-        <Stack gap="sm">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {decks.map((deck) => (
-            <Group
+            <div
               key={deck.id}
-              justify="space-between"
-              align="center"
-              wrap="nowrap"
-              className="rounded-xl border border-[var(--poke-line)] bg-[var(--poke-panel)]/85 px-4 py-3 transition-colors hover:border-[var(--poke-accent)]"
+              className="flex flex-col overflow-hidden rounded-xl border border-[var(--poke-line)] bg-[var(--poke-panel)]/85 transition-colors hover:border-[var(--poke-accent)]"
             >
-              <Stack gap={4} style={{ minWidth: 0, flex: 1 }}>
-                <Group gap="sm" wrap="wrap">
-                  <Text
-                    component={Link}
-                    href={`/decks/${deck.id}`}
-                    fw={700}
-                    className="text-[var(--poke-ink)] no-underline hover:underline"
-                  >
-                    {deck.name}
-                  </Text>
+              <Link
+                href={`/decks/${deck.id}`}
+                aria-label={`Abrir ${deck.name}`}
+                className="block"
+              >
+                <CardArt src={deck.coverImageUrl} alt={`Capa de ${deck.name}`} />
+              </Link>
+              <Stack gap={6} p="sm" style={{ flex: 1 }}>
+                <Text
+                  component={Link}
+                  href={`/decks/${deck.id}`}
+                  fw={700}
+                  lineClamp={1}
+                  className="text-[var(--poke-ink)] no-underline hover:underline"
+                >
+                  {deck.name}
+                </Text>
+                <Group gap={6} wrap="wrap">
                   <Badge variant="light" color="ink">
                     {deck.format.name}
                   </Badge>
@@ -151,35 +160,52 @@ export function DeckListPanel({ initialDecks }: { initialDecks: DeckDto[] }) {
                     </Badge>
                   ))}
                 </Group>
-                <Text size="sm" c="dimmed">
+                <Text size="sm" c="dimmed" lineClamp={2}>
                   {deck.cardCount} cartas
                   {deck.description ? ` · ${deck.description}` : ""}
                 </Text>
+                <Group gap="xs" mt="auto" pt={4}>
+                  <Button
+                    component={Link}
+                    href={`/decks/${deck.id}`}
+                    variant="subtle"
+                    size="compact-sm"
+                  >
+                    Editar
+                  </Button>
+                  <Button
+                    variant="subtle"
+                    size="compact-sm"
+                    onClick={() => setCoverDeckId(deck.id)}
+                  >
+                    Capa
+                  </Button>
+                  <Button
+                    variant="subtle"
+                    color="red"
+                    size="compact-sm"
+                    aria-label={`Excluir ${deck.name}`}
+                    loading={pendingId === deck.id}
+                    onClick={() => onDelete(deck.id)}
+                  >
+                    Excluir
+                  </Button>
+                </Group>
               </Stack>
-              <Group gap="xs" wrap="nowrap">
-                <Button
-                  component={Link}
-                  href={`/decks/${deck.id}`}
-                  variant="subtle"
-                  size="compact-sm"
-                >
-                  Editar
-                </Button>
-                <Button
-                  variant="subtle"
-                  color="red"
-                  size="compact-sm"
-                  aria-label={`Excluir ${deck.name}`}
-                  loading={pendingId === deck.id}
-                  onClick={() => onDelete(deck.id)}
-                >
-                  Excluir
-                </Button>
-              </Group>
-            </Group>
+            </div>
           ))}
-        </Stack>
+        </div>
       )}
+      {coverDeck ? (
+        <DeckCoverPicker
+          deck={coverDeck}
+          opened
+          onClose={() => setCoverDeckId(null)}
+          onChange={(next) =>
+            setDecks((prev) => prev.map((d) => (d.id === next.id ? next : d)))
+          }
+        />
+      ) : null}
     </Stack>
   );
 }

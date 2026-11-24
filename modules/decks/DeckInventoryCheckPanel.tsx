@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Alert, Badge, Group, Loader, Stack, Table, Text } from "@mantine/core";
+import { CardThumb } from "@/modules/cards/ui/CardImage";
 import type { InventoryCheckResult } from "@/server/services/inventory-check-compute";
 
 const STATUS_COLOR: Record<string, string> = {
@@ -137,7 +138,12 @@ export function InventoryCheckTable({ check }: { check: InventoryCheckResult }) 
             {check.lines.map((line) => (
               <Table.Tr key={line.logicalCardId}>
                 <Table.Td>
-                  {line.required} × {line.canonicalName}
+                  <Group gap="xs" wrap="nowrap">
+                    <CardThumb src={line.imageUrl} alt={line.canonicalName} width={32} />
+                    <span>
+                      {line.required} × {line.canonicalName}
+                    </span>
+                  </Group>
                   {line.sourceDecks.length > 0 && line.physicalShortage > 0 ? (
                     <Text size="xs" c="dimmed">
                       em uso: {line.sourceDecks.map((s) => `${s.deckName} (${s.quantity})`).join(", ")}

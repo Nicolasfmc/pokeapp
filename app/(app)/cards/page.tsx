@@ -34,13 +34,20 @@ function toURLSearchParams(
 export default async function CardsPage({ searchParams }: PageProps) {
   const raw = await searchParams;
   const urlParams = toURLSearchParams(raw);
+  // Padrão da aba Cards: cartas unificadas (lógicas) e só Standard —
+  // menos linhas por página e menos processamento.
+  const effective = new URLSearchParams(urlParams);
+  if (!effective.has("format")) effective.set("format", "standard");
+  if (!effective.has("mode")) effective.set("mode", "logical");
 
   let params;
   try {
-    params = parseCardSearchParams(urlParams);
+    params = parseCardSearchParams(effective);
   } catch (error) {
     if (error instanceof CardsServiceError) {
-      params = parseCardSearchParams(new URLSearchParams());
+      params = parseCardSearchParams(
+        new URLSearchParams({ format: "standard", mode: "logical" }),
+      );
     } else {
       throw error;
     }

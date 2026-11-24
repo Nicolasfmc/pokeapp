@@ -74,24 +74,24 @@ enum TurnOrder {
 }
 
 model User {
-  id                   String        @id @default(cuid())
-  email                String        @unique
-  username             String        @unique
-  passwordHash         String
-  accountStatus        AccountStatus @default(ACTIVE)
-  usernameChangedAt    DateTime?
-  deletionRequestedAt  DateTime?
-  createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
+  id                  String        @id @default(cuid())
+  email               String        @unique
+  username            String        @unique
+  passwordHash        String
+  accountStatus       AccountStatus @default(ACTIVE)
+  usernameChangedAt   DateTime?
+  deletionRequestedAt DateTime?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
 
-  profile                 UserProfile?
-  decks                   Deck[]
-  inventoryItems          InventoryItem[]
-  inventoryTransactions   InventoryTransaction[]
-  battleLogs              BattleLog[]
-  matches                 Match[]
-  tournaments             Tournament[]
-  auditLogs               AuditLog[]
+  profile               UserProfile?
+  decks                 Deck[]
+  inventoryItems        InventoryItem[]
+  inventoryTransactions InventoryTransaction[]
+  battleLogs            BattleLog[]
+  matches               Match[]
+  tournaments           Tournament[]
+  auditLogs             AuditLog[]
 
   @@index([username])
   @@index([accountStatus])
@@ -171,6 +171,7 @@ model CardPrinting {
   logicalCard    CardLogical     @relation(fields: [logicalCardId], references: [id], onDelete: Restrict)
   set            CardSet         @relation(fields: [setId], references: [id], onDelete: Restrict)
   inventoryItems InventoryItem[]
+  deckCovers     Deck[]          @relation("DeckCover")
 
   @@unique([setId, localId])
   @@index([tcgdexId])
@@ -218,38 +219,41 @@ model FormatRule {
 }
 
 model Archetype {
-  id              String   @id @default(cuid())
-  name            String   @unique
-  displayPokemon  Json?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default(cuid())
+  name           String   @unique
+  displayPokemon Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  decks              Deck[]
-  opponentMatches    Match[] @relation("OpponentArchetype")
+  decks           Deck[]
+  opponentMatches Match[] @relation("OpponentArchetype")
 
   @@index([name])
   @@map("archetypes")
 }
 
 model Deck {
-  id             String            @id @default(cuid())
-  userId         String
-  name           String
-  formatId       String
-  archetypeId    String?
-  description    String?
-  physicalStatus PhysicalStatus    @default(NOT_SLEEVED)
-  importStatus   DeckImportStatus?
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
+  id              String            @id @default(cuid())
+  userId          String
+  name            String
+  formatId        String
+  archetypeId     String?
+  description     String?
+  physicalStatus  PhysicalStatus    @default(NOT_SLEEVED)
+  importStatus    DeckImportStatus?
+  /// Carta escolhida para representar o deck na lista (recorte da arte).
+  coverPrintingId String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 
-  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  format       Format            @relation(fields: [formatId], references: [id], onDelete: Restrict)
-  archetype    Archetype?        @relation(fields: [archetypeId], references: [id], onDelete: SetNull)
-  cards        DeckCard[]
-  tags         DeckTag[]
-  allocations  DeckAllocation[]
-  matches      Match[]
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coverPrinting CardPrinting?    @relation("DeckCover", fields: [coverPrintingId], references: [id], onDelete: SetNull)
+  format        Format           @relation(fields: [formatId], references: [id], onDelete: Restrict)
+  archetype     Archetype?       @relation(fields: [archetypeId], references: [id], onDelete: SetNull)
+  cards         DeckCard[]
+  tags          DeckTag[]
+  allocations   DeckAllocation[]
+  matches       Match[]
 
   @@index([userId])
   @@index([formatId])
@@ -325,13 +329,13 @@ model DeckAllocation {
 }
 
 model InventoryTransaction {
-  id              String                      @id @default(cuid())
+  id              String                     @id @default(cuid())
   userId          String
   inventoryItemId String
   quantityDelta   Int
   reason          InventoryTransactionReason
   note            String?
-  createdAt       DateTime                    @default(now())
+  createdAt       DateTime                   @default(now())
 
   user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Restrict)
@@ -359,25 +363,25 @@ model BattleLog {
 }
 
 model Match {
-  id                   String       @id @default(cuid())
-  userId               String
-  battleLogId          String?      @unique
-  deckId               String
-  opponentArchetypeId  String?
-  result               MatchResult
-  turnOrder            TurnOrder?
-  gameFormatCode       String?
-  formatId             String?
-  notes                String?
-  playedAt             DateTime?
-  createdAt            DateTime     @default(now())
-  updatedAt            DateTime     @updatedAt
+  id                  String      @id @default(cuid())
+  userId              String
+  battleLogId         String?     @unique
+  deckId              String
+  opponentArchetypeId String?
+  result              MatchResult
+  turnOrder           TurnOrder?
+  gameFormatCode      String?
+  formatId            String?
+  notes               String?
+  playedAt            DateTime?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
 
-  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  battleLog         BattleLog?        @relation(fields: [battleLogId], references: [id], onDelete: SetNull)
-  deck              Deck              @relation(fields: [deckId], references: [id], onDelete: Restrict)
-  opponentArchetype Archetype?        @relation("OpponentArchetype", fields: [opponentArchetypeId], references: [id], onDelete: SetNull)
-  format            Format?           @relation(fields: [formatId], references: [id], onDelete: SetNull)
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  battleLog         BattleLog?       @relation(fields: [battleLogId], references: [id], onDelete: SetNull)
+  deck              Deck             @relation(fields: [deckId], references: [id], onDelete: Restrict)
+  opponentArchetype Archetype?       @relation("OpponentArchetype", fields: [opponentArchetypeId], references: [id], onDelete: SetNull)
+  format            Format?          @relation(fields: [formatId], references: [id], onDelete: SetNull)
   tournamentMatch   TournamentMatch?
 
   @@index([userId])
@@ -390,16 +394,16 @@ model Match {
 }
 
 model Tournament {
-  id                String    @id @default(cuid())
-  userId            String
-  name              String
-  date              DateTime?
-  location          String?
-  formatId          String?
-  placement         Int?
-  participantCount  Int?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id               String    @id @default(cuid())
+  userId           String
+  name             String
+  date             DateTime?
+  location         String?
+  formatId         String?
+  placement        Int?
+  participantCount Int?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   format            Format?           @relation(fields: [formatId], references: [id], onDelete: SetNull)
