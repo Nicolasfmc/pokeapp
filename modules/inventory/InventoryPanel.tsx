@@ -21,6 +21,7 @@ import {
 import { PrintingPicker } from "./PrintingPicker";
 import { DEFAULT_CARD_LANGUAGE, LanguageFlag, LanguageSelect } from "./languages";
 import { CardImage, CardThumb } from "@/modules/cards/ui/CardImage";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 export type InventoryItemDto = {
   id: string;
@@ -86,7 +87,7 @@ async function readError(response: Response) {
   const data = (await response.json().catch(() => ({}))) as {
     error?: string;
   };
-  return data.error ?? "Falha na operação de inventário.";
+  return data.error;
 }
 
 export function InventoryPanel({
@@ -94,6 +95,9 @@ export function InventoryPanel({
 }: {
   initialItems: InventoryItemDto[];
 }) {
+  const { t, te, tEnum, formatDateTime } = useI18n();
+  const failMessage = async (response: Response) =>
+    te(await readError(response)) ?? t("inventory.opFailed");
   const [items, setItems] = useState(initialItems);
   const [filter, setFilter] = useState<"ALL" | "COMPETITIVE" | "COLLECTION">(
     "ALL",
@@ -164,7 +168,7 @@ export function InventoryPanel({
     }
     const response = await fetch(`/api/inventory?${params.toString()}`);
     if (!response.ok) {
-      throw new Error(await readError(response));
+      throw new Error(await failMessage(response));
     }
     const data = (await response.json()) as { items: InventoryItemDto[] };
     setItems(data.items);
@@ -184,7 +188,7 @@ export function InventoryPanel({
             }
             const response = await fetch(`/api/inventory?${params.toString()}`);
             if (!response.ok) {
-              throw new Error(await readError(response));
+              throw new Error(await failMessage(response));
             }
             const data = (await response.json()) as {
               items: InventoryItemDto[];
@@ -195,13 +199,15 @@ export function InventoryPanel({
             setError(
               err instanceof Error
                 ? err.message
-                : "Não foi possível carregar o inventário.",
+                : t("inventory.loadError"),
             );
           }
         })();
       });
     }, 250);
     return () => window.clearTimeout(handle);
+    // Translations only shape the error text; changing language must not refetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter, query]);
 
   async function onAdd(event: FormEvent<HTMLFormElement>) {
@@ -225,7 +231,7 @@ export function InventoryPanel({
       });
 
       if (!response.ok) {
-        setError(await readError(response));
+        setError(await failMessage(response));
         setPending(false);
         return;
       }
@@ -237,7 +243,7 @@ export function InventoryPanel({
       setPending(false);
     } catch (err) {
       console.error(err);
-      setError("Não foi possível adicionar a carta.");
+      setError(t("inventory.addError"));
       setPending(false);
     }
   }
@@ -255,7 +261,7 @@ export function InventoryPanel({
         }),
       });
       if (!response.ok) {
-        setError(await readError(response));
+        setError(await failMessage(response));
         setPending(false);
         return;
       }
@@ -266,7 +272,7 @@ export function InventoryPanel({
       setPending(false);
     } catch (err) {
       console.error(err);
-      setError("Não foi possível ajustar a quantidade.");
+      setError(t("inventory.adjustError"));
       setPending(false);
     }
   }
@@ -276,7 +282,7 @@ export function InventoryPanel({
     try {
       const response = await fetch(`/api/inventory/${itemId}/transactions`);
       if (!response.ok) {
-        setError(await readError(response));
+        setError(await failMessage(response));
         setHistoryLoading(false);
         return;
       }
@@ -287,7 +293,7 @@ export function InventoryPanel({
       setHistoryLoading(false);
     } catch (err) {
       console.error(err);
-      setError("Não foi possível carregar o histórico.");
+      setError(t("inventory.historyError"));
       setHistoryLoading(false);
     }
   }
@@ -309,19 +315,17 @@ export function InventoryPanel({
           order={1}
           className="font-[family-name:var(--font-space-grotesk)] text-3xl tracking-tight"
         >
-          Inventory
+          {t("nav.inventory")}
         </Title>
         <Text className="mt-2 max-w-2xl text-[color-mix(in_srgb,var(--sb-ink)_75%,transparent)]">
-          Controle cópias físicas por impressão, condição e status. Reserva
-          competitiva e disponibilidade para trade são calculadas por carta
-          lógica.
+          {t("inventory.subtitle")}
         </Text>
       </div>
 
       {error ? (
         <Alert
           color="red"
-          title="Erro"
+          title={t("common.error")}
           onClose={() => setError(null)}
           withCloseButton
         >
@@ -336,45 +340,45 @@ export function InventoryPanel({
       >
         <form onSubmit={onAdd}>
           <Stack gap="sm">
-            <Text fw={600}>Adicionar carta</Text>
+            <Text fw={600}>{t("inventory.addCard")}</Text>
             <PrintingPicker
               value={cardPrintingId}
               onChange={(id) => setCardPrintingId(id)}
             />
             <div className="grid grid-cols-2 items-end gap-3 sm:grid-cols-3">
               <NumberInput
-                label="Quantidade"
+                label={t("common.quantity")}
                 min={1}
                 value={quantity}
                 onChange={setQuantity}
                 required
               />
               <Select
-                label="Condição"
-                data={CONDITIONS}
+                label={t("inventory.condition")}
+                data={CONDITIONS.map((value) => ({ value, label: tEnum("condition", value) }))}
                 value={condition}
                 onChange={setCondition}
                 allowDeselect={false}
               />
-              <LanguageSelect value={language} onChange={setLanguage} />
+              <LanguageSelect value={language} onChange={setLanguage} label={t("inventory.cardLanguage")} />
             </div>
             <div className="grid grid-cols-2 items-end gap-3 sm:grid-cols-4">
               <Select
-                label="Status"
-                data={STATUSES}
+                label={t("common.status")}
+                data={STATUSES.map((value) => ({ value, label: tEnum("collectionStatus", value) }))}
                 value={collectionStatus}
                 onChange={setCollectionStatus}
                 allowDeselect={false}
               />
               <Select
-                label="Motivo"
-                data={REASONS}
+                label={t("inventory.reason")}
+                data={REASONS.map((value) => ({ value, label: tEnum("reason", value) }))}
                 value={reason}
                 onChange={setReason}
                 allowDeselect={false}
               />
               <TextInput
-                label="Nota"
+                label={t("common.note")}
                 value={note}
                 onChange={(event) => setNote(event.currentTarget.value)}
               />
@@ -383,7 +387,7 @@ export function InventoryPanel({
                 loading={pending}
                 disabled={!cardPrintingId}
               >
-                Adicionar
+                {t("common.add")}
               </Button>
             </div>
           </Stack>
@@ -398,30 +402,30 @@ export function InventoryPanel({
             setFilter(value as "ALL" | "COMPETITIVE" | "COLLECTION")
           }
           data={[
-            { label: "Todos", value: "ALL" },
-            { label: "Competitive", value: "COMPETITIVE" },
-            { label: "Collection", value: "COLLECTION" },
+            { label: t("common.all"), value: "ALL" },
+            { label: tEnum("collectionStatus", "COMPETITIVE"), value: "COMPETITIVE" },
+            { label: tEnum("collectionStatus", "COLLECTION"), value: "COLLECTION" },
           ]}
         />
         <Switch
-          label="Unificar coleções"
-          description="Mesma carta em vários sets vira um card só"
+          label={t("inventory.unify")}
+          description={t("inventory.unifyHint")}
           checked={unify}
           onChange={(event) => setUnify(event.currentTarget.checked)}
         />
         </div>
         <div className="grid grid-cols-2 gap-3 sm:flex sm:items-end">
           <Select
-            label="Motivo do ajuste ±"
-            data={REASONS}
+            label={t("inventory.adjustReason")}
+            data={REASONS.map((value) => ({ value, label: tEnum("reason", value) }))}
             value={adjustReason}
             onChange={setAdjustReason}
             allowDeselect={false}
             className="sm:w-[180px]"
           />
           <TextInput
-            label="Buscar"
-            placeholder="Nome, set, localId…"
+            label={t("common.search")}
+            placeholder={t("inventory.searchPlaceholder")}
             value={query}
             onChange={(event) => setQuery(event.currentTarget.value)}
             className="sm:w-[240px]"
@@ -431,7 +435,7 @@ export function InventoryPanel({
 
       {groups.length === 0 ? (
         <Text c="dimmed" py="md">
-          Nenhum item no inventário.
+          {t("inventory.empty")}
         </Text>
       ) : (
         <div className="grid grid-cols-4 gap-2 sm:grid-cols-4 sm:gap-3 md:grid-cols-5 lg:grid-cols-6">
@@ -442,7 +446,7 @@ export function InventoryPanel({
                 key={group.key}
                 type="button"
                 onClick={() => setOpenGroupKey(group.key)}
-                aria-label={`Abrir ${group.name}`}
+                aria-label={t("inventory.openNamed", { name: group.name })}
                 className="group min-w-0 cursor-pointer border-0 bg-transparent p-0 text-left text-[var(--sb-ink)] transition-transform hover:-translate-y-0.5"
               >
                 <CardImage
@@ -462,7 +466,7 @@ export function InventoryPanel({
                       variant="filled"
                       className="absolute left-1 top-1"
                     >
-                      {group.sleeved} sleeved
+                      {t("inventory.sleevedCount", { count: group.sleeved })}
                     </Badge>
                   ) : null}
                 </CardImage>
@@ -480,8 +484,7 @@ export function InventoryPanel({
                     </>
                   ) : (
                     <Text size="xs" c="dimmed" truncate>
-                      {group.items.length} lotes · troca{" "}
-                      {group.availability.availableForTrade}
+                      {t("inventory.lotsTrade", { count: group.items.length, trade: group.availability.availableForTrade })}
                     </Text>
                   )}
                 </Group>
@@ -504,10 +507,12 @@ export function InventoryPanel({
         {openGroup ? (
           <Stack gap="sm">
             <Text size="sm" c="dimmed">
-              Carta lógica: owned {openGroup.availability.ownedQuantity} · sleeved{" "}
-              {openGroup.availability.sleevedAllocatedQuantity} · protegidas{" "}
-              {openGroup.availability.protectedQuantity} · disponíveis p/ troca{" "}
-              {openGroup.availability.availableForTrade}
+              {t("inventory.groupSummary", {
+                owned: openGroup.availability.ownedQuantity,
+                sleeved: openGroup.availability.sleevedAllocatedQuantity,
+                protected: openGroup.availability.protectedQuantity,
+                trade: openGroup.availability.availableForTrade,
+              })}
             </Text>
             {openGroup.items.map((item) => (
               <Paper
@@ -539,18 +544,18 @@ export function InventoryPanel({
                         size="sm"
                         color={item.collectionStatus === "COMPETITIVE" ? "ember" : "ink"}
                       >
-                        {item.collectionStatus}
+                        {tEnum("collectionStatus", item.collectionStatus)}
                       </Badge>
                     </Group>
                     <Text size="xs" c="dimmed" mt={4}>
-                      Sleeved {item.sleevedAllocatedQuantity}
+                      {t("inventory.sleevedN", { count: item.sleevedAllocatedQuantity })}
                     </Text>
                   </div>
                   <Group gap={6} wrap="nowrap" className="shrink-0">
                     <ActionIcon
                       size="lg"
                       variant="default"
-                      aria-label="Diminuir"
+                      aria-label={t("inventory.decrease")}
                       disabled={pending || item.quantity <= item.sleevedAllocatedQuantity}
                       onClick={() => void onAdjust(item.id, -1)}
                     >
@@ -562,7 +567,7 @@ export function InventoryPanel({
                     <ActionIcon
                       size="lg"
                       variant="default"
-                      aria-label="Aumentar"
+                      aria-label={t("inventory.increase")}
                       disabled={pending}
                       onClick={() => void onAdjust(item.id, 1)}
                     >
@@ -576,29 +581,29 @@ export function InventoryPanel({
                     size="compact-xs"
                     onClick={() => void toggleHistory(item.id)}
                   >
-                    {historyItemId === item.id ? "Ocultar histórico" : "Histórico"}
+                    {historyItemId === item.id ? t("inventory.hideHistory") : t("inventory.history")}
                   </Button>
                 </Group>
                 {historyItemId === item.id ? (
                   <Stack gap={2} mt="xs" className="border-t border-[var(--sb-line)] pt-2">
                     {historyLoading ? (
                       <Text size="xs" c="dimmed">
-                        Carregando…
+                        {t("common.loading")}
                       </Text>
                     ) : history.length === 0 ? (
                       <Text size="xs" c="dimmed">
-                        Sem transações.
+                        {t("inventory.noTransactions")}
                       </Text>
                     ) : (
                       history.map((tx) => (
                         <div key={tx.id} className="flex justify-between gap-2 text-xs">
                           <span>
                             {tx.quantityDelta > 0 ? "+" : ""}
-                            {tx.quantityDelta} {tx.reason}
+                            {tx.quantityDelta} {tEnum("reason", tx.reason)}
                             {tx.note ? ` — ${tx.note}` : ""}
                           </span>
                           <span className="shrink-0 text-[color-mix(in_srgb,var(--sb-ink)_55%,transparent)]">
-                            {new Date(tx.createdAt).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}
+                            {formatDateTime(tx.createdAt)}
                           </span>
                         </div>
                       ))

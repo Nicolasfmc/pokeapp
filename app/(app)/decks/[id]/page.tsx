@@ -3,10 +3,12 @@ import { notFound } from "next/navigation";
 import { DeckEditorPanel } from "@/modules/decks/DeckEditorPanel";
 import { DeckServiceError, getDeck } from "@/modules/decks";
 import { requireUser } from "@/server/auth";
+import { getTranslator } from "@/lib/i18n/server";
 
-export const metadata: Metadata = {
-  title: "Editar deck",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslator();
+  return { title: t("decks.editDeck") };
+}
 
 type PageProps = {
   params: Promise<{ id: string }>;

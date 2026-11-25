@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Alert, Badge, Group, Loader, Stack, Table, Text } from "@mantine/core";
 import { CardThumb } from "@/modules/cards/ui/CardImage";
 import type { InventoryCheckResult } from "@/server/services/inventory-check-compute";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 const STATUS_COLOR: Record<string, string> = {
   OWNED: "green",
@@ -22,6 +23,7 @@ type Props = {
 
 /** §56 — Inventory Check: OWNED / PARTIAL / MISSING por carta lógica. */
 export function DeckInventoryCheckPanel({ deckId, refreshKey, initial, onLoaded }: Props) {
+  const { t, te } = useI18n();
   const [check, setCheck] = useState<InventoryCheckResult | null>(initial ?? null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(!initial);
@@ -38,14 +40,14 @@ export function DeckInventoryCheckPanel({ deckId, refreshKey, initial, onLoaded 
         };
         if (cancelled) return;
         if (!response.ok || !data.inventoryCheck) {
-          setError(data.error ?? "Falha no Inventory Check.");
+          setError(te(data.error) ?? t("check.failed"));
         } else {
           setError(null);
           setCheck(data.inventoryCheck);
           onLoaded?.(data.inventoryCheck);
         }
       } catch {
-        if (!cancelled) setError("Não foi possível carregar o Inventory Check.");
+        if (!cancelled) setError(t("check.loadError"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -73,11 +75,14 @@ export function DeckInventoryCheckPanel({ deckId, refreshKey, initial, onLoaded 
 }
 
 export function InventoryCheckTable({ check }: { check: InventoryCheckResult }) {
+  const { t, tEnum } = useI18n();
   const { summary } = check;
+  const deckList = (decks: Array<{ deckName: string; quantity: number }>) =>
+    decks.map((s) => `${s.deckName} (${s.quantity})`).join(", ");
   if (check.lines.length === 0) {
     return (
       <Text size="sm" c="dimmed">
-        Deck sem cartas.
+        {t("check.noCards")}
       </Text>
     );
   }
@@ -86,40 +91,32 @@ export function InventoryCheckTable({ check }: { check: InventoryCheckResult }) 
     <Stack gap="sm">
       <Group gap="xs" wrap="wrap">
         <Badge color="green" variant="light">
-          {summary.owned} OWNED
+          {t("check.ownedCount", { count: summary.owned })}
         </Badge>
         <Badge color="yellow" variant="light">
-          {summary.partial} PARTIAL
+          {t("check.partialCount", { count: summary.partial })}
         </Badge>
         <Badge color="red" variant="light">
-          {summary.missing} MISSING
+          {t("check.missingCount", { count: summary.missing })}
         </Badge>
         <Text size="sm" c="dimmed">
-          {summary.totalOwned}/{summary.totalRequired} cópias possuídas
+          {t("check.copiesOwned", { owned: summary.totalOwned, required: summary.totalRequired })}
         </Text>
       </Group>
 
       {summary.readyToSleeve ? (
         <Alert color="green" variant="light">
-          Todas as cartas estão fisicamente disponíveis: o deck pode ser marcado
-          como SLEEVED.
+          {t("check.ready")}
         </Alert>
       ) : summary.resolvableByTransfer ? (
         <Alert color="yellow" variant="light">
-          Você possui todas as cartas, mas parte delas está em outro deck
-          SLEEVED. Transfira de:{" "}
-          {summary.suggestedSourceDecks
-            .map((s) => `${s.deckName} (${s.quantity})`)
-            .join(", ")}
-          .
+          {t("check.transfer", { decks: deckList(summary.suggestedSourceDecks) })}
         </Alert>
       ) : (
         <Alert color="red" variant="light">
-          Faltam cartas no Inventory para montar este deck fisicamente.
+          {t("check.missing")}
           {summary.suggestedSourceDecks.length > 0
-            ? ` Parte está em: ${summary.suggestedSourceDecks
-                .map((s) => `${s.deckName} (${s.quantity})`)
-                .join(", ")}.`
+            ? t("check.partlyIn", { decks: deckList(summary.suggestedSourceDecks) })
             : ""}
         </Alert>
       )}
@@ -128,10 +125,10 @@ export function InventoryCheckTable({ check }: { check: InventoryCheckResult }) 
         <Table striped withTableBorder={false} verticalSpacing={4} fz="sm">
           <Table.Thead>
             <Table.Tr>
-              <Table.Th>Carta</Table.Th>
-              <Table.Th className="text-right">Possuídas</Table.Th>
-              <Table.Th className="hidden text-right sm:table-cell">Livres</Table.Th>
-              <Table.Th>Status</Table.Th>
+              <Table.Th>{t("check.card")}</Table.Th>
+              <Table.Th className="text-right">{t("check.owned")}</Table.Th>
+              <Table.Th className="hidden text-right sm:table-cell">{t("check.free")}</Table.Th>
+              <Table.Th>{t("common.status")}</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -146,7 +143,7 @@ export function InventoryCheckTable({ check }: { check: InventoryCheckResult }) 
                   </Group>
                   {line.sourceDecks.length > 0 && line.physicalShortage > 0 ? (
                     <Text size="xs" c="dimmed">
-                      em uso: {line.sourceDecks.map((s) => `${s.deckName} (${s.quantity})`).join(", ")}
+                      {t("check.inUse", { decks: deckList(line.sourceDecks) })}
                     </Text>
                   ) : null}
                 </Table.Td>
@@ -158,7 +155,7 @@ export function InventoryCheckTable({ check }: { check: InventoryCheckResult }) 
                 </Table.Td>
                 <Table.Td>
                   <Badge color={STATUS_COLOR[line.status]} variant="light" size="sm">
-                    {line.status}
+                    {tEnum("inventoryCheck", line.status)}
                   </Badge>
                 </Table.Td>
               </Table.Tr>

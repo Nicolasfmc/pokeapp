@@ -23,44 +23,18 @@ import type {
   MatchResultValue,
   TurnOrderValue,
 } from "./types";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
-const RESULT_LABELS: Record<MatchResultValue, string> = {
-  WIN: "Vitória",
-  LOSS: "Derrota",
-  DRAW: "Empate",
-  UNKNOWN: "Desconhecido",
-};
-
-const TURN_LABELS: Record<TurnOrderValue, string> = {
-  FIRST: "1º",
-  SECOND: "2º",
-};
-
-const RESULT_OPTIONS = [
-  { value: "WIN", label: "Vitória" },
-  { value: "LOSS", label: "Derrota" },
-  { value: "DRAW", label: "Empate" },
-  { value: "UNKNOWN", label: "Desconhecido" },
-];
-
-const TURN_OPTIONS = [
-  { value: "FIRST", label: "Primeiro" },
-  { value: "SECOND", label: "Segundo" },
-];
+const RESULTS: MatchResultValue[] = ["WIN", "LOSS", "DRAW", "UNKNOWN"];
+const TURNS: TurnOrderValue[] = ["FIRST", "SECOND"];
 
 async function readError(response: Response) {
   const data = (await response.json().catch(() => ({}))) as {
     error?: string;
   };
-  return data.error ?? "Falha na operação de training.";
+  return data.error;
 }
 
-function formatDate(value: string | null) {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
-}
 
 export function TrainingPanel({
   initialMatches,
@@ -74,6 +48,15 @@ export function TrainingPanel({
   defaultViewerName: string;
 }) {
   const router = useRouter();
+  const { t, te, tEnum, formatDateTime } = useI18n();
+  const failMessage = async (response: Response) =>
+    te(await readError(response)) ?? t("training.opFailed");
+  const formatDate = (value: string | null) => {
+    if (!value || Number.isNaN(new Date(value).getTime())) return "—";
+    return formatDateTime(value);
+  };
+  const RESULT_OPTIONS = RESULTS.map((value) => ({ value, label: tEnum("matchResult", value) }));
+  const TURN_OPTIONS = TURNS.map((value) => ({ value, label: tEnum("turnOrder", value) }));
   const [matches, setMatches] = useState(initialMatches);
   const [archetypes, setArchetypes] = useState(initialArchetypes);
   const [error, setError] = useState<string | null>(null);
@@ -106,9 +89,9 @@ export function TrainingPanel({
     () =>
       decks.map((deck) => ({
         value: deck.id,
-        label: `${deck.name} (${deck.formatName})`,
+        label: `${deck.name} (${tEnum("format", deck.formatName)})`,
       })),
-    [decks],
+    [decks, tEnum],
   );
 
   const archetypeOptions = useMemo(
@@ -136,7 +119,7 @@ export function TrainingPanel({
       body: JSON.stringify({ name }),
     });
     if (!response.ok) {
-      throw new Error(await readError(response));
+      throw new Error(await failMessage(response));
     }
     const data = (await response.json()) as { archetype: ArchetypeDto };
     setArchetypes((prev) =>
@@ -152,7 +135,7 @@ export function TrainingPanel({
     setError(null);
     setMessage(null);
     if (!rawLog.trim()) {
-      setError("Cole o battle log do TCG Live.");
+      setError(t("training.pasteLog"));
       return;
     }
     setPending(true);
@@ -167,7 +150,7 @@ export function TrainingPanel({
         error?: string;
       };
       if (!response.ok || !data.preview) {
-        setError(data.error ?? "Falha ao analisar log.");
+        setError(te(data.error) ?? t("training.analyzeFailed"));
         setPreview(null);
         return;
       }
@@ -181,7 +164,7 @@ export function TrainingPanel({
         setOpponentArchetypeId(null);
       }
     } catch {
-      setError("Não foi possível analisar o log.");
+      setError(t("training.analyzeError"));
     } finally {
       setPending(false);
     }
@@ -198,15 +181,15 @@ export function TrainingPanel({
     }
 
     if (!deckId) {
-      setError("Selecione um deck.");
+      setError(t("training.pickDeck"));
       return;
     }
     if (!rawLog.trim()) {
-      setError("Cole o battle log do TCG Live.");
+      setError(t("training.pasteLog"));
       return;
     }
     if (!viewerName.trim()) {
-      setError("Informe o viewerName (nome no log).");
+      setError(t("training.needViewer"));
       return;
     }
 
@@ -233,7 +216,7 @@ export function TrainingPanel({
         error?: string;
       };
       if (!response.ok || !data.match) {
-        setError(data.error ?? "Falha ao importar log.");
+        setError(te(data.error) ?? t("training.importFailed"));
         setPending(false);
         return;
       }
@@ -246,14 +229,14 @@ export function TrainingPanel({
       setOpponentArchetypeId(null);
       setMessage(
         data.parseOk === false
-          ? "Match criado com avisos no parse."
-          : "Match importado.",
+          ? t("training.createdWithWarnings")
+          : t("training.imported"),
       );
       setPending(false);
       startTransition(() => router.refresh());
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Não foi possível importar o log.",
+        err instanceof Error ? err.message : t("training.importError"),
       );
       setPending(false);
     }
@@ -293,7 +276,7 @@ export function TrainingPanel({
         error?: string;
       };
       if (!response.ok || !data.match) {
-        setError(data.error ?? "Falha ao atualizar match.");
+        setError(te(data.error) ?? t("training.updateFailed"));
         setPending(false);
         return;
       }
@@ -301,11 +284,11 @@ export function TrainingPanel({
         prev.map((item) => (item.id === data.match!.id ? data.match! : item)),
       );
       setEditingId(null);
-      setMessage("Match atualizado.");
+      setMessage(t("training.updated"));
       setPending(false);
       startTransition(() => router.refresh());
     } catch {
-      setError("Não foi possível atualizar o match.");
+      setError(t("training.updateError"));
       setPending(false);
     }
   }
@@ -319,7 +302,7 @@ export function TrainingPanel({
         method: "DELETE",
       });
       if (!response.ok) {
-        setError(await readError(response));
+        setError(await failMessage(response));
         setPending(false);
         return;
       }
@@ -328,7 +311,7 @@ export function TrainingPanel({
       setPending(false);
       startTransition(() => router.refresh());
     } catch {
-      setError("Não foi possível excluir o match.");
+      setError(t("training.deleteError"));
       setPending(false);
     }
   }
@@ -336,10 +319,9 @@ export function TrainingPanel({
   return (
     <Stack gap="xl" className="max-w-5xl animate-[sb-rise_0.45s_ease-out]">
       <div>
-        <Title order={2}>Training</Title>
+        <Title order={2}>{t("nav.training")}</Title>
         <Text c="dimmed" size="sm" mt={4}>
-          Importe battle logs do TCG Live. O raw_log fica imutável; result e
-          turn_order usam viewerName.
+          {t("training.subtitle")}
         </Text>
       </div>
 
@@ -359,10 +341,10 @@ export function TrainingPanel({
           gap="md"
           className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/85 px-4 py-5"
         >
-          <Title order={4}>Importar battle log</Title>
+          <Title order={4}>{t("training.importLog")}</Title>
           <Textarea
-            label="Battle log (TCG Live)"
-            description="No TCG Live: tela de resultado → Exportar log (copia para a área de transferência)."
+            label={t("training.logLabel")}
+            description={t("training.logHint")}
             minRows={8}
             value={rawLog}
             onChange={(event) => {
@@ -374,8 +356,8 @@ export function TrainingPanel({
           />
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
             <TextInput
-              label="Seu nome no TCG Live"
-              description="Necessário para WIN/LOSS e FIRST/SECOND"
+              label={t("training.viewerName")}
+              description={t("training.viewerHint")}
               value={viewerName}
               onChange={(event) => {
                 setViewerName(event.currentTarget.value);
@@ -384,22 +366,22 @@ export function TrainingPanel({
               required
             />
             <Select
-              label="Meu deck"
+              label={t("training.myDeck")}
               data={deckOptions}
               value={deckId}
               onChange={setDeckId}
               searchable
-              nothingFoundMessage="Nenhum deck"
+              nothingFoundMessage={t("training.noDecks")}
               required
             />
           </SimpleGrid>
           {!preview ? (
             <Group>
               <Button onClick={onAnalyze} loading={pending} disabled={!rawLog.trim()}>
-                Analisar log
+                {t("training.analyze")}
               </Button>
               <Text size="xs" c="dimmed">
-                Extrai jogadores, resultado, ordem de turno, formato e Pokémon do oponente.
+                {t("training.analyzeHint")}
               </Text>
             </Group>
           ) : (
@@ -414,29 +396,29 @@ export function TrainingPanel({
               </Text>
               {preview.warnings.map((warning) => (
                 <Text key={warning} size="xs" c="orange">
-                  {warning}
+                  {te(warning)}
                 </Text>
               ))}
               <Text size="sm">
-                Oponente: <b>{preview.opponent ?? "?"}</b>
+                {t("training.opponent")} <b>{preview.opponent ?? "?"}</b>
                 {preview.opponentPokemon.length > 0
-                  ? ` — Pokémon detectados: ${preview.opponentPokemon.join(", ")}`
-                  : " — nenhum Pokémon detectado no log"}
+                  ? t("training.detected", { list: preview.opponentPokemon.join(", ") })
+                  : t("training.noneDetected")}
               </Text>
               <Text size="sm">
                 {preview.suggestedArchetype
-                  ? `Arquétipo sugerido: ${preview.suggestedArchetype.name} (revise abaixo)`
-                  : "Sem sugestão automática: selecione ou crie o arquétipo."}
+                  ? t("training.suggested", { name: preview.suggestedArchetype.name })
+                  : t("training.noSuggestion")}
               </Text>
               <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
                 <Select
-                  label="Resultado"
+                  label={t("training.result")}
                   data={RESULT_OPTIONS}
                   value={reviewResult}
                   onChange={setReviewResult}
                 />
                 <Select
-                  label="Ordem de turno"
+                  label={t("training.turnOrder")}
                   data={TURN_OPTIONS}
                   value={reviewTurnOrder}
                   onChange={setReviewTurnOrder}
@@ -447,17 +429,17 @@ export function TrainingPanel({
           )}
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
             <Select
-              label="Arquétipo do oponente"
+              label={t("training.opponentArchetype")}
               data={archetypeOptions}
               value={opponentArchetypeId}
               onChange={setOpponentArchetypeId}
               searchable
               clearable
-              nothingFoundMessage="Nenhum arquétipo"
+              nothingFoundMessage={t("training.noArchetypes")}
             />
             <TextInput
-              label="Ou criar arquétipo"
-              placeholder="Ex.: Dragapult"
+              label={t("training.orCreate")}
+              placeholder={t("training.archetypePlaceholder")}
               value={newArchetypeName}
               onChange={(event) =>
                 setNewArchetypeName(event.currentTarget.value)
@@ -467,19 +449,18 @@ export function TrainingPanel({
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
             <TextInput
               type="datetime-local"
-              label="Jogada em (opcional)"
+              label={t("training.playedAt")}
               value={playedAt}
               onChange={(event) => setPlayedAt(event.currentTarget.value)}
             />
             <TextInput
-              label="Notas"
+              label={t("common.notes")}
               value={notes}
               onChange={(event) => setNotes(event.currentTarget.value)}
             />
           </SimpleGrid>
           <Text size="xs" c="dimmed">
-            gameFormatCode do log (ex.: TEF-PBL) é preservado e não é o Format
-            interno do deck.
+            {t("training.formatNote")}
           </Text>
           <Group>
             <Button
@@ -487,11 +468,11 @@ export function TrainingPanel({
               loading={pending}
               disabled={decks.length === 0 || !preview}
             >
-              Salvar partida
+              {t("training.saveMatch")}
             </Button>
             {decks.length === 0 ? (
               <Text size="sm" c="dimmed">
-                Crie um deck antes de importar.
+                {t("training.createDeckFirst")}
               </Text>
             ) : null}
           </Group>
@@ -499,15 +480,15 @@ export function TrainingPanel({
       </form>
 
       <Stack gap="sm">
-        <Title order={4}>Histórico de matches</Title>
+        <Title order={4}>{t("training.history")}</Title>
         {matches.length === 0 ? (
           <Stack
             gap="sm"
             className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/80 px-6 py-10"
           >
-            <Text fw={600}>Nenhuma partida ainda</Text>
+            <Text fw={600}>{t("training.noMatches")}</Text>
             <Text c="dimmed" size="sm">
-              Cole um log do TCG Live acima para registrar a primeira partida.
+              {t("training.noMatchesHint")}
             </Text>
           </Stack>
         ) : (
@@ -531,11 +512,11 @@ export function TrainingPanel({
                             : "gray"
                       }
                     >
-                      {RESULT_LABELS[match.result]}
+                      {tEnum("matchResult", match.result)}
                     </Badge>
                     {match.turnOrder ? (
                       <Badge variant="outline" color="ink">
-                        {TURN_LABELS[match.turnOrder]}
+                        {tEnum("turnOrder", match.turnOrder)}
                       </Badge>
                     ) : null}
                     {match.gameFormatCode ? (
@@ -546,7 +527,7 @@ export function TrainingPanel({
                   </Group>
                   <Text size="sm" c="dimmed">
                     vs{" "}
-                    {match.opponentArchetype?.name ?? "arquétipo não definido"}
+                    {match.opponentArchetype?.name ?? t("training.undefinedArchetype")}
                     {" · "}
                     {formatDate(match.playedAt ?? match.createdAt)}
                     {match.battleLog
@@ -563,12 +544,12 @@ export function TrainingPanel({
                     size="compact-sm"
                     onClick={() => startEdit(match)}
                   >
-                    Editar
+                    {t("common.edit")}
                   </Button>
                   <ActionIcon
                     variant="subtle"
                     color="red"
-                    aria-label="Excluir match"
+                    aria-label={t("training.deleteMatch")}
                     onClick={() => onDelete(match.id)}
                     disabled={pending}
                   >
@@ -592,7 +573,7 @@ export function TrainingPanel({
                         searchable
                       />
                       <Select
-                        label="Arquétipo oponente"
+                        label={t("training.opponentArchetype")}
                         data={archetypeOptions}
                         value={editArchetypeId}
                         onChange={setEditArchetypeId}
@@ -602,13 +583,13 @@ export function TrainingPanel({
                     </SimpleGrid>
                     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
                       <Select
-                        label="Resultado"
+                        label={t("training.result")}
                         data={RESULT_OPTIONS}
                         value={editResult}
                         onChange={setEditResult}
                       />
                       <Select
-                        label="Ordem"
+                        label={t("training.order")}
                         data={TURN_OPTIONS}
                         value={editTurnOrder}
                         onChange={setEditTurnOrder}
@@ -616,7 +597,7 @@ export function TrainingPanel({
                       />
                     </SimpleGrid>
                     <TextInput
-                      label="Notas"
+                      label={t("common.notes")}
                       value={editNotes}
                       onChange={(event) =>
                         setEditNotes(event.currentTarget.value)
@@ -624,7 +605,7 @@ export function TrainingPanel({
                     />
                     <Group>
                       <Button type="submit" size="compact-sm" loading={pending}>
-                        Salvar
+                        {t("common.save")}
                       </Button>
                       <Button
                         type="button"
@@ -632,7 +613,7 @@ export function TrainingPanel({
                         variant="subtle"
                         onClick={() => setEditingId(null)}
                       >
-                        Cancelar
+                        {t("common.cancel")}
                       </Button>
                     </Group>
                   </Stack>

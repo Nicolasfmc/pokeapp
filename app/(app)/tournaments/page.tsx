@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import { requireUser } from "@/server/auth";
 import { listTournaments } from "@/modules/tournaments";
 import { TournamentListPanel } from "@/modules/tournaments/TournamentListPanel";
+import { getTranslator } from "@/lib/i18n/server";
 
-export const metadata: Metadata = {
-  title: "Tournaments",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslator();
+  return { title: t("nav.tournaments") };
+}
 
 export default async function TournamentsPage() {
   const user = await requireUser();

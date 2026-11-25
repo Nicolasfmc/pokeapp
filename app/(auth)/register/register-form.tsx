@@ -12,9 +12,11 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 export function RegisterForm() {
   const router = useRouter();
+  const { t, te } = useI18n();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -42,7 +44,7 @@ export function RegisterForm() {
       const data = (await response.json()) as { error?: string };
 
       if (!response.ok) {
-        setError(data.error ?? "Falha no cadastro.");
+        setError(te(data.error) ?? t("auth.registerFailed"));
         setPending(false);
         return;
       }
@@ -52,7 +54,7 @@ export function RegisterForm() {
         router.refresh();
       });
     } catch {
-      setError("Não foi possível conectar. Tente novamente.");
+      setError(t("common.connectionError"));
       setPending(false);
     }
   }
@@ -60,22 +62,22 @@ export function RegisterForm() {
   return (
     <Stack gap="lg">
       <div>
-        <Title order={2}>Criar conta</Title>
+        <Title order={2}>{t("auth.createAccount")}</Title>
         <Text c="dimmed" size="sm" mt={4}>
-          Username único vira sua URL pública.
+          {t("auth.registerSubtitle")}
         </Text>
       </div>
 
       <form onSubmit={onSubmit}>
         <Stack gap="md">
           {error ? (
-            <Alert color="red" title="Erro" variant="light">
+            <Alert color="red" title={t("common.error")} variant="light">
               {error}
             </Alert>
           ) : null}
 
           <TextInput
-            label="E-mail"
+            label={t("auth.email")}
             name="email"
             type="email"
             autoComplete="email"
@@ -85,9 +87,9 @@ export function RegisterForm() {
           />
 
           <TextInput
-            label="Username"
+            label={t("auth.username")}
             name="username"
-            description="3–20 caracteres: letra inicial, depois letras, números ou _"
+            description={t("auth.usernameHint")}
             autoComplete="username"
             required
             value={username}
@@ -95,17 +97,17 @@ export function RegisterForm() {
           />
 
           <TextInput
-            label="Nome de exibição"
+            label={t("auth.displayName")}
             name="displayName"
-            description="Opcional; independente do username"
+            description={t("auth.displayNameHint")}
             value={displayName}
             onChange={(event) => setDisplayName(event.currentTarget.value)}
           />
 
           <PasswordInput
-            label="Senha"
+            label={t("auth.password")}
             name="password"
-            description="Mínimo de 8 caracteres"
+            description={t("auth.passwordHint")}
             autoComplete="new-password"
             required
             value={password}
@@ -113,13 +115,13 @@ export function RegisterForm() {
           />
 
           <Button type="submit" loading={pending} fullWidth>
-            Criar conta
+            {t("auth.createAccount")}
           </Button>
         </Stack>
       </form>
 
       <Text size="sm" ta="center">
-        Já tem conta?{" "}
+        {t("auth.haveAccount")}{" "}
         <Text
           component={Link}
           href="/login"
@@ -128,7 +130,7 @@ export function RegisterForm() {
           fw={600}
           className="no-underline"
         >
-          Entrar
+          {t("auth.signIn")}
         </Text>
       </Text>
     </Stack>

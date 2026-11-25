@@ -1,17 +1,19 @@
+import type { MessageKey } from "@/lib/i18n/messages";
+
 export type NavItem = {
-  label: string;
+  labelKey: MessageKey;
   href: string;
 };
 
 export const primaryNav: NavItem[] = [
-  { label: "Dashboard", href: "/" },
-  { label: "Cards", href: "/cards" },
-  { label: "Decks", href: "/decks" },
-  { label: "Inventory", href: "/inventory" },
-  { label: "Training", href: "/training" },
-  { label: "Tournaments", href: "/tournaments" },
-  { label: "Statistics", href: "/statistics" },
-  { label: "Profile", href: "/profile" },
+  { labelKey: "nav.dashboard", href: "/" },
+  { labelKey: "nav.cards", href: "/cards" },
+  { labelKey: "nav.decks", href: "/decks" },
+  { labelKey: "nav.inventory", href: "/inventory" },
+  { labelKey: "nav.training", href: "/training" },
+  { labelKey: "nav.tournaments", href: "/tournaments" },
+  { labelKey: "nav.statistics", href: "/statistics" },
+  { labelKey: "nav.profile", href: "/profile" },
 ];
 
 export function isNavActive(pathname: string, href: string) {

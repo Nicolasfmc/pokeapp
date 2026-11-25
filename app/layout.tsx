@@ -6,6 +6,7 @@ import {
 } from "@mantine/core";
 import { AppProviders } from "@/components/providers/AppProviders";
 import "./globals.css";
+import { getTranslator } from "@/lib/i18n/server";
 
 const display = Space_Grotesk({
   variable: "--font-space-grotesk",
@@ -25,19 +26,22 @@ const mono = IBM_Plex_Mono({
   weight: ["400", "500"],
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: "SleeveBuild",
-    template: "%s · SleeveBuild",
-  },
-  description:
-    "Coleção, decks, inventário e treinamento para Pokémon TCG competitivo.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslator();
+  return {
+    title: {
+      default: "SleeveBuild",
+      template: "%s · SleeveBuild",
+    },
+    description: t("meta.description"),
+  };
+}
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const { locale, t } = await getTranslator();
   return (
     <html
-      lang="pt-BR"
+      lang={locale}
       {...mantineHtmlProps}
       className={`${display.variable} ${body.variable} ${mono.variable} h-full antialiased`}
     >
@@ -45,9 +49,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ColorSchemeScript defaultColorScheme="light" />
       </head>
       <body className="min-h-full flex flex-col">
-        <AppProviders>{children}</AppProviders>
+        <AppProviders locale={locale}>{children}</AppProviders>
         <span
-          aria-label="Versão do app"
+          aria-label={t("common.appVersion")}
           className="pointer-events-none fixed bottom-1.5 right-2.5 z-50 select-none font-[family-name:var(--font-ibm-plex-mono)] text-[11px] text-gray-400"
         >
           v{process.env.NEXT_PUBLIC_APP_VERSION}

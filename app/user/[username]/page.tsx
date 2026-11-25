@@ -6,6 +6,7 @@ import {
   PublicProfileError,
   PublicProfileView,
 } from "@/modules/profile";
+import { getTranslator } from "@/lib/i18n/server";
 
 type PageProps = {
   params: Promise<{ username: string }>;
@@ -15,14 +16,15 @@ export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { username } = await params;
+  const { t } = await getTranslator();
   try {
     const profile = await getPublicProfile(username);
     return {
       title: `${profile.displayName} (@${profile.username})`,
-      description: profile.bio ?? `Inventário público de ${profile.displayName}`,
+      description: profile.bio ?? t("public.inventoryOf", { name: profile.displayName }),
     };
   } catch {
-    return { title: "Perfil" };
+    return { title: t("public.profile") };
   }
 }
 

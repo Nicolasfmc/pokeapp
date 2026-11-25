@@ -12,9 +12,11 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 export function LoginForm() {
   const router = useRouter();
+  const { t, te } = useI18n();
   const searchParams = useSearchParams();
   const nextPath = searchParams.get("next") || "/";
   const [email, setEmail] = useState("");
@@ -37,7 +39,7 @@ export function LoginForm() {
       const data = (await response.json()) as { error?: string };
 
       if (!response.ok) {
-        setError(data.error ?? "Falha no login.");
+        setError(te(data.error) ?? t("auth.signInFailed"));
         setPending(false);
         return;
       }
@@ -47,7 +49,7 @@ export function LoginForm() {
         router.refresh();
       });
     } catch {
-      setError("Não foi possível conectar. Tente novamente.");
+      setError(t("common.connectionError"));
       setPending(false);
     }
   }
@@ -55,22 +57,22 @@ export function LoginForm() {
   return (
     <Stack gap="lg">
       <div>
-        <Title order={2}>Entrar</Title>
+        <Title order={2}>{t("auth.signIn")}</Title>
         <Text c="dimmed" size="sm" mt={4}>
-          Acesse decks, inventário e treino.
+          {t("auth.signInSubtitle")}
         </Text>
       </div>
 
       <form onSubmit={onSubmit}>
         <Stack gap="md">
           {error ? (
-            <Alert color="red" title="Erro" variant="light">
+            <Alert color="red" title={t("common.error")} variant="light">
               {error}
             </Alert>
           ) : null}
 
           <TextInput
-            label="E-mail"
+            label={t("auth.email")}
             name="email"
             type="email"
             autoComplete="email"
@@ -80,7 +82,7 @@ export function LoginForm() {
           />
 
           <PasswordInput
-            label="Senha"
+            label={t("auth.password")}
             name="password"
             autoComplete="current-password"
             required
@@ -89,13 +91,13 @@ export function LoginForm() {
           />
 
           <Button type="submit" loading={pending} fullWidth>
-            Entrar
+            {t("auth.signIn")}
           </Button>
         </Stack>
       </form>
 
       <Text size="sm" ta="center">
-        Não tem conta?{" "}
+        {t("auth.noAccount")}{" "}
         <Text
           component={Link}
           href="/register"
@@ -104,7 +106,7 @@ export function LoginForm() {
           fw={600}
           className="no-underline"
         >
-          Criar conta
+          {t("auth.createAccount")}
         </Text>
       </Text>
     </Stack>

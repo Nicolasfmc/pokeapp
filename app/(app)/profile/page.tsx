@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getAuthMe, getSession } from "@/server/auth";
 import { AccountSettingsPanel } from "@/modules/profile/settings";
+import { getTranslator } from "@/lib/i18n/server";
 
-export const metadata: Metadata = {
-  title: "Profile",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslator();
+  return { title: t("nav.profile") };
+}
 
 export default async function ProfilePage() {
   const session = await getSession();

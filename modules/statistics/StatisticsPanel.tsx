@@ -20,14 +20,11 @@ import type {
   StatisticsFilters,
   StatisticsSummary,
 } from "./types";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 function formatWinRate(winRate: number | null) {
   if (winRate === null) return "—";
   return `${(winRate * 100).toFixed(1)}%`;
-}
-
-function formatRecord(stats: RecordStats) {
-  return `${stats.wins}W / ${stats.losses}L / ${stats.draws}D`;
 }
 
 function buildQuery(filters: StatisticsFilters) {
@@ -46,12 +43,6 @@ function buildQuery(filters: StatisticsFilters) {
   return query ? `?${query}` : "";
 }
 
-function turnLabel(value: string) {
-  if (value === "FIRST") return "Primeiro";
-  if (value === "SECOND") return "Segundo";
-  return "Indefinido";
-}
-
 export function StatisticsPanel({
   initialSummary,
   filterOptions,
@@ -59,6 +50,11 @@ export function StatisticsPanel({
   initialSummary: StatisticsSummary;
   filterOptions: StatisticsFilterOptions;
 }) {
+  const { t, te, tEnum } = useI18n();
+  const formatRecord = (stats: RecordStats) =>
+    t("stats.recordShort", { w: stats.wins, l: stats.losses, d: stats.draws });
+  const turnLabel = (value: string) =>
+    value === "FIRST" || value === "SECOND" ? tEnum("turnOrder", value) : t("stats.undefinedTurn");
   const [summary, setSummary] = useState(initialSummary);
   const [deckId, setDeckId] = useState<string | null>(
     initialSummary.filters.deckId ?? null,
@@ -103,7 +99,7 @@ export function StatisticsPanel({
         error?: string;
       };
       if (!response.ok) {
-        setError(data.error ?? "Falha ao carregar estatísticas.");
+        setError(te(data.error) ?? t("stats.loadFailed"));
         return;
       }
       startTransition(() => {
@@ -111,7 +107,7 @@ export function StatisticsPanel({
       });
     } catch (err) {
       console.error(err);
-      setError("Falha ao carregar estatísticas.");
+      setError(t("stats.loadFailed"));
     } finally {
       setPending(false);
     }
@@ -143,33 +139,32 @@ export function StatisticsPanel({
   return (
     <Stack gap="lg">
       <div>
-        <Title order={2}>Estatísticas</Title>
+        <Title order={2}>{t("nav.statistics")}</Title>
         <Text c="dimmed" size="sm">
-          Agregações a partir dos Matches persistidos. Win rate = W / (W + L);
-          empates e UNKNOWN ficam fora do denominador.
+          {t("stats.subtitle")}
         </Text>
       </div>
 
       {error ? (
-        <Alert color="red" title="Erro" onClose={() => setError(null)} withCloseButton>
+        <Alert color="red" title={t("common.error")} onClose={() => setError(null)} withCloseButton>
           {error}
         </Alert>
       ) : null}
 
       <Stack gap="sm">
-        <Title order={4}>Filtros</Title>
+        <Title order={4}>{t("stats.filters")}</Title>
         <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="sm">
           <Select
-            label="Deck"
-            placeholder="Todos"
+            label={t("stats.deck")}
+            placeholder={t("common.all")}
             clearable
             data={deckOptions}
             value={deckId}
             onChange={setDeckId}
           />
           <Select
-            label="Arquétipo adversário"
-            placeholder="Todos"
+            label={t("stats.opponentArchetype")}
+            placeholder={t("common.all")}
             clearable
             searchable
             data={archetypeOptions}
@@ -177,8 +172,8 @@ export function StatisticsPanel({
             onChange={setOpponentArchetypeId}
           />
           <Select
-            label="Código de formato"
-            placeholder="Todos"
+            label={t("stats.formatCode")}
+            placeholder={t("common.all")}
             clearable
             searchable
             data={formatOptions}
@@ -186,8 +181,8 @@ export function StatisticsPanel({
             onChange={setGameFormatCode}
           />
           <Select
-            label="Torneio"
-            placeholder="Todos"
+            label={t("stats.tournament")}
+            placeholder={t("common.all")}
             clearable
             data={tournamentOptions}
             value={tournamentId}
@@ -195,13 +190,13 @@ export function StatisticsPanel({
             disabled={tournamentOptions.length === 0}
           />
           <TextInput
-            label="De"
+            label={t("stats.from")}
             type="date"
             value={from}
             onChange={(event) => setFrom(event.currentTarget.value)}
           />
           <TextInput
-            label="Até"
+            label={t("stats.to")}
             type="date"
             value={to}
             onChange={(event) => setTo(event.currentTarget.value)}
@@ -212,10 +207,10 @@ export function StatisticsPanel({
             loading={pending}
             onClick={() => void loadSummary(currentFilters())}
           >
-            Aplicar
+            {t("stats.apply")}
           </Button>
           <Button variant="default" disabled={pending} onClick={clearFilters}>
-            Limpar
+            {t("cards.clear")}
           </Button>
         </Group>
       </Stack>
@@ -223,7 +218,7 @@ export function StatisticsPanel({
       <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="md">
         <Stack gap={4}>
           <Text size="sm" c="dimmed">
-            Partidas
+            {t("stats.matches")}
           </Text>
           <Text fw={700} size="xl">
             {overall.matches}
@@ -231,12 +226,12 @@ export function StatisticsPanel({
         </Stack>
         <Stack gap={4}>
           <Text size="sm" c="dimmed">
-            Placar
+            {t("stats.record")}
           </Text>
           <Group gap="xs">
-            <Badge color="green">{overall.wins}W</Badge>
-            <Badge color="red">{overall.losses}L</Badge>
-            <Badge color="gray">{overall.draws}D</Badge>
+            <Badge color="green">{t("stats.w", { n: overall.wins })}</Badge>
+            <Badge color="red">{t("stats.l", { n: overall.losses })}</Badge>
+            <Badge color="gray">{t("stats.d", { n: overall.draws })}</Badge>
             {overall.unknowns > 0 ? (
               <Badge color="yellow">{overall.unknowns}?</Badge>
             ) : null}
@@ -244,7 +239,7 @@ export function StatisticsPanel({
         </Stack>
         <Stack gap={4}>
           <Text size="sm" c="dimmed">
-            Win rate
+            {t("stats.winRate")}
           </Text>
           <Text fw={700} size="xl">
             {formatWinRate(overall.winRate)}
@@ -252,7 +247,7 @@ export function StatisticsPanel({
         </Stack>
         <Stack gap={4}>
           <Text size="sm" c="dimmed">
-            Decididas (W+L)
+            {t("stats.decided")}
           </Text>
           <Text fw={700} size="xl">
             {overall.wins + overall.losses}
@@ -261,19 +256,19 @@ export function StatisticsPanel({
       </SimpleGrid>
 
       <Stack gap="xs">
-        <Title order={4}>Por deck</Title>
+        <Title order={4}>{t("stats.byDeck")}</Title>
         {summary.byDeck.length === 0 ? (
           <Text c="dimmed" size="sm">
-            Nenhuma partida no filtro atual.
+            {t("stats.noMatches")}
           </Text>
         ) : (
           <Table striped highlightOnHover withTableBorder>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>Deck</Table.Th>
-                <Table.Th>Partidas</Table.Th>
-                <Table.Th>Placar</Table.Th>
-                <Table.Th>Win rate</Table.Th>
+                <Table.Th>{t("stats.deck")}</Table.Th>
+                <Table.Th>{t("stats.matches")}</Table.Th>
+                <Table.Th>{t("stats.record")}</Table.Th>
+                <Table.Th>{t("stats.winRate")}</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -291,26 +286,26 @@ export function StatisticsPanel({
       </Stack>
 
       <Stack gap="xs">
-        <Title order={4}>Matchup por arquétipo</Title>
+        <Title order={4}>{t("stats.byMatchup")}</Title>
         {summary.byMatchup.length === 0 ? (
           <Text c="dimmed" size="sm">
-            Nenhuma partida no filtro atual.
+            {t("stats.noMatches")}
           </Text>
         ) : (
           <Table striped highlightOnHover withTableBorder>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>Adversário</Table.Th>
-                <Table.Th>Partidas</Table.Th>
-                <Table.Th>Placar</Table.Th>
-                <Table.Th>Win rate</Table.Th>
+                <Table.Th>{t("stats.opponent")}</Table.Th>
+                <Table.Th>{t("stats.matches")}</Table.Th>
+                <Table.Th>{t("stats.record")}</Table.Th>
+                <Table.Th>{t("stats.winRate")}</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
               {summary.byMatchup.map((row) => (
                 <Table.Tr key={row.opponentArchetypeId ?? "__none__"}>
                   <Table.Td>
-                    {row.opponentArchetypeName ?? "Arquétipo não definido"}
+                    {row.opponentArchetypeName ?? t("stats.undefinedArchetype")}
                   </Table.Td>
                   <Table.Td>{row.matches}</Table.Td>
                   <Table.Td>{formatRecord(row)}</Table.Td>
@@ -323,19 +318,19 @@ export function StatisticsPanel({
       </Stack>
 
       <Stack gap="xs">
-        <Title order={4}>Por ordem de turno</Title>
+        <Title order={4}>{t("stats.byTurn")}</Title>
         {summary.byTurnOrder.length === 0 ? (
           <Text c="dimmed" size="sm">
-            Nenhuma partida no filtro atual.
+            {t("stats.noMatches")}
           </Text>
         ) : (
           <Table striped highlightOnHover withTableBorder>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>Turno</Table.Th>
-                <Table.Th>Partidas</Table.Th>
-                <Table.Th>Placar</Table.Th>
-                <Table.Th>Win rate</Table.Th>
+                <Table.Th>{t("stats.turn")}</Table.Th>
+                <Table.Th>{t("stats.matches")}</Table.Th>
+                <Table.Th>{t("stats.record")}</Table.Th>
+                <Table.Th>{t("stats.winRate")}</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>

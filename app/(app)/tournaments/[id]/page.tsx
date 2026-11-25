@@ -7,10 +7,12 @@ import {
   listAttachableMatches,
 } from "@/modules/tournaments";
 import { TournamentDetailPanel } from "@/modules/tournaments/TournamentDetailPanel";
+import { getTranslator } from "@/lib/i18n/server";
 
-export const metadata: Metadata = {
-  title: "Torneio",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslator();
+  return { title: t("tournaments.tournament") };
+}
 
 type PageProps = {
   params: Promise<{ id: string }>;

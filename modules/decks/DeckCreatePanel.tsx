@@ -15,6 +15,7 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 type FormatOption = {
   id: string;
@@ -22,14 +23,11 @@ type FormatOption = {
   name: string;
 };
 
-const TAG_OPTIONS = [
-  { value: "FAVORITE", label: "Favorito" },
-  { value: "TESTING", label: "Testando" },
-  { value: "ARCHIVED", label: "Arquivado" },
-] as const;
+const TAG_VALUES = ["FAVORITE", "TESTING", "ARCHIVED"] as const;
 
 export function DeckCreatePanel() {
   const router = useRouter();
+  const { t, te, tEnum } = useI18n();
   const [formats, setFormats] = useState<FormatOption[]>([]);
   const [name, setName] = useState("");
   const [formatId, setFormatId] = useState<string | null>(null);
@@ -50,7 +48,7 @@ export function DeckCreatePanel() {
         };
         if (!response.ok) {
           if (!cancelled) {
-            setError(data.error ?? "Falha ao carregar formatos.");
+            setError(te(data.error) ?? t("decks.loadFormatsFailed"));
             setLoadingFormats(false);
           }
           return;
@@ -65,7 +63,7 @@ export function DeckCreatePanel() {
         }
       } catch {
         if (!cancelled) {
-          setError("Não foi possível carregar formatos.");
+          setError(t("decks.loadFormatsError"));
           setLoadingFormats(false);
         }
       }
@@ -73,7 +71,7 @@ export function DeckCreatePanel() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t, te]);
 
   function toggleTag(tag: string) {
     setTags((prev) =>
@@ -102,7 +100,7 @@ export function DeckCreatePanel() {
         error?: string;
       };
       if (!response.ok || !data.deck) {
-        setError(data.error ?? "Falha ao criar deck.");
+        setError(te(data.error) ?? t("decks.createFailed"));
         setPending(false);
         return;
       }
@@ -111,7 +109,7 @@ export function DeckCreatePanel() {
         router.refresh();
       });
     } catch {
-      setError("Não foi possível criar o deck.");
+      setError(t("decks.createError"));
       setPending(false);
     }
   }
@@ -119,9 +117,9 @@ export function DeckCreatePanel() {
   return (
     <Stack gap="lg" className="max-w-xl animate-[sb-rise_0.45s_ease-out]">
       <div>
-        <Title order={2}>Novo deck</Title>
+        <Title order={2}>{t("decks.newDeck")}</Title>
         <Text c="dimmed" size="sm" mt={4}>
-          Defina nome, formato e tags. As cartas entram no editor.
+          {t("decks.createSubtitle")}
         </Text>
       </div>
 
@@ -133,16 +131,16 @@ export function DeckCreatePanel() {
           {error ? <Alert color="red">{error}</Alert> : null}
 
           <TextInput
-            label="Nome"
+            label={t("common.name")}
             required
             value={name}
             onChange={(e) => setName(e.currentTarget.value)}
           />
 
           <Select
-            label="Formato"
+            label={t("common.format")}
             required
-            data={formats.map((f) => ({ value: f.id, label: f.name }))}
+            data={formats.map((f) => ({ value: f.id, label: tEnum("format", f.name) }))}
             value={formatId}
             onChange={setFormatId}
             disabled={loadingFormats}
@@ -150,7 +148,7 @@ export function DeckCreatePanel() {
           />
 
           <Textarea
-            label="Descrição"
+            label={t("common.description")}
             value={description}
             onChange={(e) => setDescription(e.currentTarget.value)}
             minRows={2}
@@ -158,29 +156,29 @@ export function DeckCreatePanel() {
 
           <Stack gap="xs">
             <Text size="sm" fw={500}>
-              Tags
+              {t("common.tags")}
             </Text>
             <Group gap="md">
-              {TAG_OPTIONS.map((tag) => (
+              {TAG_VALUES.map((tag) => (
                 <Checkbox
-                  key={tag.value}
-                  label={tag.label}
-                  checked={tags.includes(tag.value)}
-                  onChange={() => toggleTag(tag.value)}
+                  key={tag}
+                  label={tEnum("deckTag", tag)}
+                  checked={tags.includes(tag)}
+                  onChange={() => toggleTag(tag)}
                 />
               ))}
             </Group>
             <Text size="xs" c="dimmed">
-              Tags são independentes do formato.
+              {t("decks.tagsHint")}
             </Text>
           </Stack>
 
           <Group justify="space-between" mt="sm">
             <Button component={Link} href="/decks" variant="subtle">
-              Cancelar
+              {t("common.cancel")}
             </Button>
             <Button type="submit" loading={pending} disabled={!formatId}>
-              Criar
+              {t("decks.create")}
             </Button>
           </Group>
         </Stack>

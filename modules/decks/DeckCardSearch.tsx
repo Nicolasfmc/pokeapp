@@ -13,6 +13,7 @@ import {
 } from "@mantine/core";
 import type { CardCategory } from "@prisma/client";
 import { CardImage } from "@/modules/cards/ui/CardImage";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 type LogicalResult = {
   id: string;
@@ -40,6 +41,7 @@ type Props = {
 
 /** §5.2 — busca de cartas no Deckbuilder (lê só PostgreSQL, nunca a TCGdex). */
 export function DeckCardSearch({ formatCode, quantities = {}, onAdd }: Props) {
+  const { t, te, tEnum } = useI18n();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("ALL");
   const [onlyLegal, setOnlyLegal] = useState(true);
@@ -66,13 +68,13 @@ export function DeckCardSearch({ formatCode, quantities = {}, onAdd }: Props) {
         });
         const data = (await response.json()) as { items?: LogicalResult[]; error?: string };
         if (!response.ok) {
-          setError(data.error ?? "Falha na busca.");
+          setError(te(data.error) ?? t("search.failed"));
           setResults([]);
         } else {
           setResults(data.items ?? []);
         }
       } catch (err) {
-        if ((err as Error).name !== "AbortError") setError("Falha na busca.");
+        if ((err as Error).name !== "AbortError") setError(t("search.failed"));
       } finally {
         setLoading(false);
       }
@@ -81,7 +83,7 @@ export function DeckCardSearch({ formatCode, quantities = {}, onAdd }: Props) {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [query, category, onlyLegal, formatCode]);
+  }, [query, category, onlyLegal, formatCode, t, te]);
 
   const searching = query.trim().length >= 2;
   const visibleResults = searching ? results : [];
@@ -91,9 +93,9 @@ export function DeckCardSearch({ formatCode, quantities = {}, onAdd }: Props) {
       gap="sm"
       className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/85 p-4"
     >
-      <Text fw={700}>Buscar carta</Text>
+      <Text fw={700}>{t("search.title")}</Text>
       <TextInput
-        placeholder="Nome da carta (ex.: Buddy-Buddy Poffin)"
+        placeholder={t("search.placeholder")}
         value={query}
         onChange={(e) => setQuery(e.currentTarget.value)}
         rightSection={loading ? <Loader size="xs" /> : null}
@@ -104,15 +106,15 @@ export function DeckCardSearch({ formatCode, quantities = {}, onAdd }: Props) {
           value={category}
           onChange={setCategory}
           data={[
-            { value: "ALL", label: "Todas" },
-            { value: "POKEMON", label: "Pokémon" },
-            { value: "TRAINER", label: "Trainer" },
-            { value: "ENERGY", label: "Energy" },
+            { value: "ALL", label: t("cards.allCategories") },
+            { value: "POKEMON", label: tEnum("category", "POKEMON") },
+            { value: "TRAINER", label: tEnum("category", "TRAINER") },
+            { value: "ENERGY", label: tEnum("category", "ENERGY") },
           ]}
         />
         <Checkbox
           size="xs"
-          label={`Somente legais em ${formatCode}`}
+          label={t("search.onlyLegal", { format: tEnum("format", formatCode) })}
           checked={onlyLegal}
           onChange={(e) => setOnlyLegal(e.currentTarget.checked)}
         />
@@ -124,12 +126,12 @@ export function DeckCardSearch({ formatCode, quantities = {}, onAdd }: Props) {
       ) : null}
       {searching && !loading && visibleResults.length === 0 && !error ? (
         <Text size="sm" c="dimmed">
-          Nenhuma carta encontrada.
+          {t("search.noResults")}
         </Text>
       ) : null}
       {visibleResults.length > 0 ? (
         <Text size="xs" c="dimmed">
-          Clique na carta para adicionar 1 cópia.
+          {t("search.clickToAdd")}
         </Text>
       ) : null}
       <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-4 sm:gap-2 lg:grid-cols-6">
@@ -139,8 +141,8 @@ export function DeckCardSearch({ formatCode, quantities = {}, onAdd }: Props) {
             <button
               key={card.id}
               type="button"
-              title={`Adicionar ${card.canonicalName}`}
-              aria-label={`Adicionar ${card.canonicalName}`}
+              title={t("search.addNamed", { name: card.canonicalName })}
+              aria-label={t("search.addNamed", { name: card.canonicalName })}
               className="group cursor-pointer border-0 bg-transparent p-0 text-left transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-[var(--sb-accent)]"
               onClick={() =>
                 onAdd({
@@ -169,7 +171,7 @@ export function DeckCardSearch({ formatCode, quantities = {}, onAdd }: Props) {
                   </Badge>
                 ) : null}
                 <span className="absolute inset-x-0 bottom-0 bg-black/60 py-0.5 text-center text-xs font-bold text-white opacity-0 transition-opacity group-hover:opacity-100">
-                  + Adicionar
+                  {t("search.addOverlay")}
                 </span>
               </CardImage>
               <Text size="xs" mt={4} lineClamp={1}>

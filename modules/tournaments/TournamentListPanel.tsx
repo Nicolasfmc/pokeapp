@@ -16,20 +16,15 @@ import {
   SimpleGrid,
 } from "@mantine/core";
 import type { FormatOption, TournamentListItemDto } from "./types";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 async function readError(response: Response) {
   const data = (await response.json().catch(() => ({}))) as {
     error?: string;
   };
-  return data.error ?? "Falha na operação de torneio.";
+  return data.error;
 }
 
-function formatDate(value: string | null) {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString("pt-BR", { timeZone: "UTC" });
-}
 
 export function TournamentListPanel({
   initialTournaments,
@@ -37,6 +32,11 @@ export function TournamentListPanel({
   initialTournaments: TournamentListItemDto[];
 }) {
   const router = useRouter();
+  const { t, te, tEnum, formatDate: fmtDate } = useI18n();
+  const failMessage = async (response: Response) =>
+    te(await readError(response)) ?? t("tournaments.opFailed");
+  const formatDate = (value: string | null) =>
+    !value || Number.isNaN(new Date(value).getTime()) ? "—" : fmtDate(value);
   const [tournaments, setTournaments] = useState(initialTournaments);
   const [formats, setFormats] = useState<FormatOption[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -89,7 +89,7 @@ export function TournamentListPanel({
         }),
       });
       if (!response.ok) {
-        setError(await readError(response));
+        setError(await failMessage(response));
         setPending(false);
         return;
       }
@@ -123,7 +123,7 @@ export function TournamentListPanel({
       startTransition(() => router.refresh());
       router.push(`/tournaments/${item.id}`);
     } catch {
-      setError("Não foi possível criar o torneio.");
+      setError(t("tournaments.createError"));
       setPending(false);
     }
   }
@@ -136,7 +136,7 @@ export function TournamentListPanel({
         method: "DELETE",
       });
       if (!response.ok) {
-        setError(await readError(response));
+        setError(await failMessage(response));
         setPendingId(null);
         return;
       }
@@ -144,7 +144,7 @@ export function TournamentListPanel({
       setPendingId(null);
       startTransition(() => router.refresh());
     } catch {
-      setError("Não foi possível excluir o torneio.");
+      setError(t("tournaments.deleteError"));
       setPendingId(null);
     }
   }
@@ -152,9 +152,9 @@ export function TournamentListPanel({
   return (
     <Stack gap="lg" className="max-w-5xl animate-[sb-rise_0.45s_ease-out]">
       <div>
-        <Title order={2}>Torneios</Title>
+        <Title order={2}>{t("nav.tournaments")}</Title>
         <Text c="dimmed" size="sm" mt={4}>
-          Registre eventos e vincule partidas já importadas por rodada.
+          {t("tournaments.subtitle")}
         </Text>
       </div>
 
@@ -169,16 +169,16 @@ export function TournamentListPanel({
           gap="sm"
           className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/80 px-4 py-4"
         >
-          <Text fw={600}>Novo torneio</Text>
+          <Text fw={600}>{t("tournaments.new")}</Text>
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
             <TextInput
-              label="Nome"
+              label={t("common.name")}
               required
               value={name}
               onChange={(e) => setName(e.currentTarget.value)}
             />
             <TextInput
-              label="Data"
+              label={t("common.date")}
               type="date"
               value={date}
               onChange={(e) => setDate(e.currentTarget.value)}
@@ -186,21 +186,21 @@ export function TournamentListPanel({
           </SimpleGrid>
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
             <TextInput
-              label="Local"
+              label={t("tournaments.location")}
               value={location}
               onChange={(e) => setLocation(e.currentTarget.value)}
             />
             <Select
-              label="Formato"
+              label={t("common.format")}
               clearable
-              data={formats.map((f) => ({ value: f.id, label: f.name }))}
+              data={formats.map((f) => ({ value: f.id, label: tEnum("format", f.name) }))}
               value={formatId}
               onChange={setFormatId}
             />
           </SimpleGrid>
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
             <NumberInput
-              label="Colocação"
+              label={t("tournaments.placement")}
               min={1}
               value={placement}
               onChange={(value) =>
@@ -208,7 +208,7 @@ export function TournamentListPanel({
               }
             />
             <NumberInput
-              label="Participantes"
+              label={t("tournaments.participants")}
               min={1}
               value={participantCount}
               onChange={(value) =>
@@ -218,7 +218,7 @@ export function TournamentListPanel({
           </SimpleGrid>
           <Group justify="flex-end">
             <Button type="submit" loading={pending}>
-              Criar torneio
+              {t("tournaments.create")}
             </Button>
           </Group>
         </Stack>
@@ -229,9 +229,9 @@ export function TournamentListPanel({
           gap="sm"
           className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/80 px-6 py-10"
         >
-          <Text fw={600}>Nenhum torneio ainda</Text>
+          <Text fw={600}>{t("tournaments.empty")}</Text>
           <Text c="dimmed" size="sm">
-            Crie um torneio acima e depois anexe partidas de training.
+            {t("tournaments.emptyHint")}
           </Text>
         </Stack>
       ) : (
@@ -255,7 +255,7 @@ export function TournamentListPanel({
                     {tournament.name}
                   </Text>
                   {tournament.format ? (
-                    <Badge variant="light">{tournament.format.name}</Badge>
+                    <Badge variant="light">{tEnum("format", tournament.format.name)}</Badge>
                   ) : null}
                   {tournament.placement != null ? (
                     <Badge variant="outline">#{tournament.placement}</Badge>
@@ -265,9 +265,9 @@ export function TournamentListPanel({
                   {formatDate(tournament.date)}
                   {tournament.location ? ` · ${tournament.location}` : ""}
                   {tournament.participantCount != null
-                    ? ` · ${tournament.participantCount} jogadores`
+                    ? t("tournaments.players", { count: tournament.participantCount })
                     : ""}
-                  {` · ${tournament.matchCount} partida${tournament.matchCount === 1 ? "" : "s"}`}
+                  {t("tournaments.matches", { count: tournament.matchCount })}
                 </Text>
               </Stack>
               <Group gap="xs" wrap="nowrap">
@@ -277,17 +277,17 @@ export function TournamentListPanel({
                   variant="light"
                   size="compact-sm"
                 >
-                  Abrir
+                  {t("tournaments.open")}
                 </Button>
                 <Button
                   variant="subtle"
                   color="red"
                   size="compact-sm"
-                  aria-label={`Excluir ${tournament.name}`}
+                  aria-label={t("tournaments.deleteNamed", { name: tournament.name })}
                   loading={pendingId === tournament.id}
                   onClick={() => void onDelete(tournament.id)}
                 >
-                  Excluir
+                  {t("common.delete")}
                 </Button>
               </Group>
             </Group>

@@ -11,23 +11,10 @@ import {
   TextInput,
 } from "@mantine/core";
 import type { CardSearchMode, CardSetDto } from "../types";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
-const CATEGORY_OPTIONS = [
-  { value: "POKEMON", label: "Pokémon" },
-  { value: "TRAINER", label: "Trainer" },
-  { value: "ENERGY", label: "Energy" },
-];
-
-const FORMAT_OPTIONS = [
-  { value: "standard", label: "Standard" },
-  { value: "expanded", label: "Expanded" },
-  { value: "all", label: "Qualquer" },
-];
-
-const MODE_OPTIONS = [
-  { value: "logical", label: "Unificar cartas iguais" },
-  { value: "printing", label: "Todas as impressões" },
-];
+const CATEGORIES = ["POKEMON", "TRAINER", "ENERGY"];
+const FORMATS = ["standard", "expanded", "all"];
 
 function readParam(params: URLSearchParams, key: string) {
   return params.get(key) ?? "";
@@ -39,6 +26,13 @@ export function CardsSearchFilters({
   initialSets: CardSetDto[];
 }) {
   const router = useRouter();
+  const { t, tEnum } = useI18n();
+  const CATEGORY_OPTIONS = CATEGORIES.map((value) => ({ value, label: tEnum("category", value) }));
+  const FORMAT_OPTIONS = FORMATS.map((value) => ({ value, label: tEnum("format", value) }));
+  const MODE_OPTIONS = [
+    { value: "logical", label: t("cards.modeLogical") },
+    { value: "printing", label: t("cards.modePrinting") },
+  ];
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -105,15 +99,15 @@ export function CardsSearchFilters({
     >
       <Stack gap="md">
         <TextInput
-          label="Buscar"
-          placeholder="Nome, local ID ou tcgdex ID"
+          label={t("cards.searchLabel")}
+          placeholder={t("cards.searchPlaceholder")}
           value={q}
           onChange={(event) => setQ(event.currentTarget.value)}
         />
         <SimpleGrid cols={{ base: 2, md: 3 }} spacing="sm" verticalSpacing="sm">
           <Select
-            label="Set"
-            placeholder="Todos os sets"
+            label={t("cards.set")}
+            placeholder={t("cards.allSets")}
             data={setOptions}
             value={setId || null}
             searchable
@@ -121,35 +115,35 @@ export function CardsSearchFilters({
             onChange={(value) => setSetId(value ?? "")}
           />
           <Select
-            label="Categoria"
-            placeholder="Todas"
+            label={t("cards.category")}
+            placeholder={t("cards.allCategories")}
             data={CATEGORY_OPTIONS}
             value={category || null}
             clearable
             onChange={(value) => setCategory(value ?? "")}
           />
           <Select
-            label="Formato / legalidade"
-            placeholder="Qualquer"
+            label={t("cards.formatLegality")}
+            placeholder={t("common.any")}
             data={FORMAT_OPTIONS}
             value={format}
             allowDeselect={false}
             onChange={(value) => setFormat(value ?? "standard")}
           />
           <TextInput
-            label="Raridade"
-            placeholder="ex.: Rare, Common"
+            label={t("cards.rarity")}
+            placeholder={t("cards.rarityPlaceholder")}
             value={rarity}
             onChange={(event) => setRarity(event.currentTarget.value)}
           />
           <TextInput
-            label="Regulation mark"
-            placeholder="ex.: G, H"
+            label={t("cards.regulationMark")}
+            placeholder={t("cards.regulationPlaceholder")}
             value={regulationMark}
             onChange={(event) => setRegulationMark(event.currentTarget.value)}
           />
           <Select
-            label="Exibição"
+            label={t("cards.display")}
             data={MODE_OPTIONS}
             value={mode}
             allowDeselect={false}
@@ -160,10 +154,10 @@ export function CardsSearchFilters({
         </SimpleGrid>
         <Group justify="flex-end" gap="sm">
           <Button type="button" variant="subtle" color="ink" onClick={clearFilters}>
-            Limpar
+            {t("cards.clear")}
           </Button>
           <Button type="submit" color="ember">
-            Buscar
+            {t("common.search")}
           </Button>
         </Group>
       </Stack>

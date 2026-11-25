@@ -3,12 +3,14 @@ import Image from "next/image";
 import { SimpleGrid, Stack, Text, Title } from "@mantine/core";
 import type { CardSetDetailDto } from "../types";
 import { CardPrintingThumb } from "./CardPrintingThumb";
+import { getTranslator } from "@/lib/i18n/server";
 
 type CardSetDetailProps = {
   set: CardSetDetailDto;
 };
 
-export function CardSetDetail({ set }: CardSetDetailProps) {
+export async function CardSetDetail({ set }: CardSetDetailProps) {
+  const { t } = await getTranslator();
   return (
     <section className="mx-auto w-full max-w-6xl px-2 py-6 sm:px-4">
       <Stack gap="lg">
@@ -17,7 +19,7 @@ export function CardSetDetail({ set }: CardSetDetailProps) {
             href="/cards"
             className="text-sm text-[color-mix(in_srgb,var(--sb-ink)_55%,transparent)] no-underline hover:text-[var(--sb-accent)]"
           >
-            ← Voltar à busca
+            {t("cards.backToSearch")}
           </Link>
           <div className="mt-4 flex flex-wrap items-start gap-4">
             {set.logoUrl ? (
@@ -37,7 +39,7 @@ export function CardSetDetail({ set }: CardSetDetailProps) {
                 {set.name}
               </Title>
               <Text mt={6} c="dimmed">
-                {[set.code, set.series, `${set.printings.length} cartas`]
+                {[set.code, set.series, t("common.cards", { count: set.printings.length })]
                   .filter(Boolean)
                   .join(" · ")}
               </Text>
@@ -52,7 +54,7 @@ export function CardSetDetail({ set }: CardSetDetailProps) {
         </SimpleGrid>
 
         {set.printings.length === 0 ? (
-          <Text c="dimmed">Nenhuma impressão ativa neste set.</Text>
+          <Text c="dimmed">{t("cards.noActivePrintings")}</Text>
         ) : null}
       </Stack>
     </section>

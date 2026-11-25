@@ -12,6 +12,7 @@ import {
   Text,
 } from "@mantine/core";
 import type { DeckDto } from "./types";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 type AllocationRow = {
   id: string;
@@ -28,6 +29,7 @@ type Props = {
 
 export function DeckSleevePanel({ deck, onDeckChange }: Props) {
   const router = useRouter();
+  const { t, te, tEnum } = useI18n();
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -54,7 +56,7 @@ export function DeckSleevePanel({ deck, onDeckChange }: Props) {
               )
               .map((item) => ({
                 value: item.id,
-                label: `${item.name} (${item.format.code})`,
+                label: `${item.name} (${tEnum("format", item.format.code)})`,
               })),
           );
         }
@@ -65,7 +67,7 @@ export function DeckSleevePanel({ deck, onDeckChange }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [deck.id, deck.physicalStatus]);
+  }, [deck.id, deck.physicalStatus, tEnum]);
 
   useEffect(() => {
     if (!isSleeved) {
@@ -106,17 +108,17 @@ export function DeckSleevePanel({ deck, onDeckChange }: Props) {
         error?: string;
       };
       if (!response.ok || !data.deck) {
-        setError(data.error ?? "Falha ao marcar SLEEVED.");
+        setError(te(data.error) ?? t("sleeve.markFailed"));
         setPending(false);
         return;
       }
       onDeckChange(data.deck);
       setAllocations(data.allocations ?? []);
-      setMessage("Deck marcado como SLEEVED.");
+      setMessage(t("sleeve.marked"));
       setPending(false);
       startTransition(() => router.refresh());
     } catch {
-      setError("Não foi possível marcar como SLEEVED.");
+      setError(t("sleeve.markError"));
       setPending(false);
     }
   }
@@ -134,24 +136,24 @@ export function DeckSleevePanel({ deck, onDeckChange }: Props) {
         error?: string;
       };
       if (!response.ok || !data.deck) {
-        setError(data.error ?? "Falha ao desmontar.");
+        setError(te(data.error) ?? t("sleeve.unsleeveFailed"));
         setPending(false);
         return;
       }
       onDeckChange(data.deck);
       setAllocations([]);
-      setMessage("Deck desmontado (NOT_SLEEVED).");
+      setMessage(t("sleeve.unsleeved"));
       setPending(false);
       startTransition(() => router.refresh());
     } catch {
-      setError("Não foi possível desmontar o deck.");
+      setError(t("sleeve.unsleeveError"));
       setPending(false);
     }
   }
 
   async function onTransfer() {
     if (!sourceDeckId) {
-      setError("Selecione um deck SLEEVED de origem.");
+      setError(t("sleeve.pickSource"));
       return;
     }
     setError(null);
@@ -169,18 +171,18 @@ export function DeckSleevePanel({ deck, onDeckChange }: Props) {
         error?: string;
       };
       if (!response.ok || !data.targetDeck) {
-        setError(data.error ?? "Falha na transferência.");
+        setError(te(data.error) ?? t("sleeve.transferFailed"));
         setPending(false);
         return;
       }
       onDeckChange(data.targetDeck);
       setAllocations(data.allocations ?? []);
       setSourceDeckId(null);
-      setMessage("Transferência concluída. Origem virou NOT_SLEEVED.");
+      setMessage(t("sleeve.transferred"));
       setPending(false);
       startTransition(() => router.refresh());
     } catch {
-      setError("Não foi possível transferir.");
+      setError(t("sleeve.transferError"));
       setPending(false);
     }
   }
@@ -191,14 +193,13 @@ export function DeckSleevePanel({ deck, onDeckChange }: Props) {
       className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/85 p-4"
     >
       <Group justify="space-between" align="center">
-        <Text fw={700}>Sleevado físico</Text>
+        <Text fw={700}>{t("sleeve.title")}</Text>
         <Badge color={isSleeved ? "green" : "gray"} variant="light">
-          {isSleeved ? "SLEEVED" : "NOT_SLEEVED"}
+          {tEnum("physicalStatus", deck.physicalStatus)}
         </Badge>
       </Group>
       <Text size="sm" c="dimmed">
-        SLEEVED aloca impressões do inventário. Transferência desmonta a origem
-        atomicamente.
+        {t("sleeve.hint")}
       </Text>
 
       {error ? <Alert color="red">{error}</Alert> : null}
@@ -207,11 +208,11 @@ export function DeckSleevePanel({ deck, onDeckChange }: Props) {
       <Group gap="sm" wrap="wrap">
         {!isSleeved ? (
           <Button loading={pending} onClick={onSleeve}>
-            Marcar SLEEVED
+            {t("sleeve.mark")}
           </Button>
         ) : (
           <Button loading={pending} variant="light" onClick={onUnsleeve}>
-            Desmontar
+            {t("sleeve.unsleeve")}
           </Button>
         )}
       </Group>
@@ -219,8 +220,8 @@ export function DeckSleevePanel({ deck, onDeckChange }: Props) {
       {!isSleeved ? (
         <Stack gap="xs">
           <Select
-            label="Transferir de deck SLEEVED"
-            placeholder="Origem"
+            label={t("sleeve.transferFrom")}
+            placeholder={t("sleeve.source")}
             data={sleevedSources}
             value={sourceDeckId}
             onChange={setSourceDeckId}
@@ -234,7 +235,7 @@ export function DeckSleevePanel({ deck, onDeckChange }: Props) {
             onClick={onTransfer}
             disabled={!sourceDeckId}
           >
-            Transferir e sleevear
+            {t("sleeve.transferAndSleeve")}
           </Button>
         </Stack>
       ) : null}
@@ -242,7 +243,7 @@ export function DeckSleevePanel({ deck, onDeckChange }: Props) {
       {isSleeved && visibleAllocations.length > 0 ? (
         <Stack gap={4}>
           <Text size="sm" fw={600}>
-            Alocações ({visibleAllocations.length})
+            {t("sleeve.allocations", { count: visibleAllocations.length })}
           </Text>
           {visibleAllocations.slice(0, 12).map((row) => (
             <Text key={row.id} size="xs" c="dimmed">
@@ -252,7 +253,7 @@ export function DeckSleevePanel({ deck, onDeckChange }: Props) {
           ))}
           {visibleAllocations.length > 12 ? (
             <Text size="xs" c="dimmed">
-              +{visibleAllocations.length - 12} impressões
+              {t("sleeve.morePrintings", { count: visibleAllocations.length - 12 })}
             </Text>
           ) : null}
         </Stack>

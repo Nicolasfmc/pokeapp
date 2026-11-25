@@ -2,12 +2,14 @@ import Link from "next/link";
 import { Badge, SimpleGrid, Stack, Text, Title } from "@mantine/core";
 import type { CardLogicalDetailDto } from "../types";
 import { CardPrintingThumb } from "./CardPrintingThumb";
+import { getTranslator } from "@/lib/i18n/server";
 
 type CardLogicalDetailProps = {
   logical: CardLogicalDetailDto;
 };
 
-export function CardLogicalDetail({ logical }: CardLogicalDetailProps) {
+export async function CardLogicalDetail({ logical }: CardLogicalDetailProps) {
+  const { t, tEnum } = await getTranslator();
   return (
     <section className="mx-auto w-full max-w-6xl px-2 py-6 sm:px-4">
       <Stack gap="lg">
@@ -16,7 +18,7 @@ export function CardLogicalDetail({ logical }: CardLogicalDetailProps) {
             href="/cards"
             className="text-sm text-[color-mix(in_srgb,var(--sb-ink)_55%,transparent)] no-underline hover:text-[var(--sb-accent)]"
           >
-            ← Voltar à busca
+            {t("cards.backToSearch")}
           </Link>
           <Title
             order={1}
@@ -27,16 +29,14 @@ export function CardLogicalDetail({ logical }: CardLogicalDetailProps) {
           </Title>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <Badge color="ink" variant="light">
-              {logical.category}
+              {tEnum("category", logical.category)}
             </Badge>
             <Text size="sm" c="dimmed">
-              {logical.printings.length} impressão(ões)
+              {t("cards.printingCount", { count: logical.printings.length })}
             </Text>
           </div>
           <Text mt="sm" className="max-w-2xl text-[color-mix(in_srgb,var(--sb-ink)_75%,transparent)]">
-            Todas as impressões desta carta (reprints e artes alternativas).
-            Escolha uma impressão específica para ver detalhes. Decks usam a
-            carta unificada; o inventário guarda a impressão.
+            {t("cards.logicalSubtitle")}
           </Text>
         </div>
 

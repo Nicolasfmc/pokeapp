@@ -8,10 +8,12 @@ import {
   searchCards,
 } from "@/modules/cards";
 import { CardsSearchView } from "@/modules/cards/ui/CardsSearchView";
+import { getTranslator } from "@/lib/i18n/server";
 
-export const metadata: Metadata = {
-  title: "Cards",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslator();
+  return { title: t("nav.cards") };
+}
 
 type PageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -33,6 +35,7 @@ function toURLSearchParams(
 
 export default async function CardsPage({ searchParams }: PageProps) {
   const raw = await searchParams;
+  const { t } = await getTranslator();
   const urlParams = toURLSearchParams(raw);
   // Padrão da aba Cards: cartas unificadas (lógicas) e só Standard —
   // menos linhas por página e menos processamento.
@@ -62,7 +65,7 @@ export default async function CardsPage({ searchParams }: PageProps) {
     <Suspense
       fallback={
         <section className="mx-auto w-full max-w-6xl px-2 py-6 sm:px-4">
-          <Text c="dimmed">Carregando busca…</Text>
+          <Text c="dimmed">{t("cards.loadingSearch")}</Text>
         </section>
       }
     >

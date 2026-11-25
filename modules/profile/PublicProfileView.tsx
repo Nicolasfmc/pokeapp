@@ -1,16 +1,18 @@
 import { Avatar, Stack, Text, Title } from "@mantine/core";
 import type { PublicProfile, PublicTradeItem } from "./types";
 import { CardImage } from "@/modules/cards/ui/CardImage";
+import { getTranslator } from "@/lib/i18n/server";
 
 type PublicProfileViewProps = {
   profile: PublicProfile;
   inventory: PublicTradeItem[];
 };
 
-export function PublicProfileView({
+export async function PublicProfileView({
   profile,
   inventory,
 }: PublicProfileViewProps) {
+  const { t } = await getTranslator();
   return (
     <section className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6">
       <Stack gap="xl" className="animate-[sb-rise_480ms_ease-out]">
@@ -53,14 +55,14 @@ export function PublicProfileView({
             order={2}
             className="font-[family-name:var(--font-space-grotesk)] text-xl tracking-tight"
           >
-            Disponível para troca
+            {t("public.forTrade")}
           </Title>
           <Text size="sm" c="dimmed" mt={4} mb="md">
-            Somente cópias acima da reserva competitiva.
+            {t("public.forTradeHint")}
           </Text>
 
           {inventory.length === 0 ? (
-            <Text c="dimmed">Nenhuma carta disponível para troca.</Text>
+            <Text c="dimmed">{t("public.noneForTrade")}</Text>
           ) : (
             <ul className="m-0 grid list-none grid-cols-4 gap-2 p-0 sm:grid-cols-4 sm:gap-3 md:grid-cols-5">
               {inventory.map((item) => (

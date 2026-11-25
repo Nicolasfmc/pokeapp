@@ -14,22 +14,11 @@ import {
 import type { DeckDto } from "./types";
 import { DeckCoverPicker } from "./DeckCoverPicker";
 import { CardArt, CardImage } from "@/modules/cards/ui/CardImage";
-
-const TAG_LABELS: Record<string, string> = {
-  FAVORITE: "Favorito",
-  TESTING: "Testando",
-  ARCHIVED: "Arquivado",
-};
-
-const IMPORT_LABELS: Record<string, string> = {
-  IMPORTED: "Importado",
-  PARTIALLY_RESOLVED: "Parcial",
-  READY: "Pronto",
-  INVALID: "Inválido",
-};
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 export function DeckListPanel({ initialDecks }: { initialDecks: DeckDto[] }) {
   const router = useRouter();
+  const { t, te, tEnum } = useI18n();
   const [decks, setDecks] = useState(initialDecks);
   const [error, setError] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -43,7 +32,7 @@ export function DeckListPanel({ initialDecks }: { initialDecks: DeckDto[] }) {
       const response = await fetch(`/api/decks/${deckId}`, { method: "DELETE" });
       const data = (await response.json()) as { error?: string; archived?: boolean };
       if (!response.ok) {
-        setError(data.error ?? "Falha ao excluir deck.");
+        setError(te(data.error) ?? t("decks.deleteFailed"));
         setPendingId(null);
         return;
       }
@@ -60,14 +49,14 @@ export function DeckListPanel({ initialDecks }: { initialDecks: DeckDto[] }) {
               : d,
           ),
         );
-        setError("Deck possui partidas registradas e foi arquivado em vez de excluído.");
+        setError(t("decks.archivedInstead"));
       } else {
         setDecks((prev) => prev.filter((d) => d.id !== deckId));
       }
       setPendingId(null);
       startTransition(() => router.refresh());
     } catch {
-      setError("Não foi possível excluir o deck.");
+      setError(t("decks.deleteError"));
       setPendingId(null);
     }
   }
@@ -76,17 +65,17 @@ export function DeckListPanel({ initialDecks }: { initialDecks: DeckDto[] }) {
     <Stack gap="lg" className="max-w-5xl animate-[sb-rise_0.45s_ease-out]">
       <Group justify="space-between" align="flex-end">
         <div>
-          <Title order={2}>Decks</Title>
+          <Title order={2}>{t("decks.title")}</Title>
           <Text c="dimmed" size="sm" mt={4}>
-            Construa listas lógicas por formato. Sem alocação física nesta tela.
+            {t("decks.subtitle")}
           </Text>
         </div>
         <Group gap="sm">
           <Button component={Link} href="/decks/import" variant="light">
-            Importar Limitless
+            {t("decks.importLimitless")}
           </Button>
           <Button component={Link} href="/decks/new">
-            Novo deck
+            {t("decks.newDeck")}
           </Button>
         </Group>
       </Group>
@@ -102,16 +91,16 @@ export function DeckListPanel({ initialDecks }: { initialDecks: DeckDto[] }) {
           gap="sm"
           className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/80 px-6 py-10"
         >
-          <Text fw={600}>Nenhum deck ainda</Text>
+          <Text fw={600}>{t("decks.noDecks")}</Text>
           <Text c="dimmed" size="sm">
-            Crie um deck do zero ou importe uma lista Limitless.
+            {t("decks.noDecksHint")}
           </Text>
           <Group gap="sm" mt="xs">
             <Button component={Link} href="/decks/new">
-              Criar deck
+              {t("decks.createDeck")}
             </Button>
             <Button component={Link} href="/decks/import" variant="light">
-              Importar
+              {t("decks.import")}
             </Button>
           </Group>
         </Stack>
@@ -124,18 +113,18 @@ export function DeckListPanel({ initialDecks }: { initialDecks: DeckDto[] }) {
             >
               <Link
                 href={`/decks/${deck.id}`}
-                aria-label={`Abrir ${deck.name}`}
+                aria-label={t("decks.open", { name: deck.name })}
                 className="my-2 ml-2 block w-28 shrink-0 self-start sm:m-0 sm:w-auto sm:self-auto"
               >
                 <div className="sm:hidden">
                   <CardImage
                     src={deck.coverImageUrl}
-                    alt={`Capa de ${deck.name}`}
+                    alt={t("decks.coverOf", { name: deck.name })}
                     sizes="112px"
                   />
                 </div>
                 <div className="hidden sm:block">
-                  <CardArt src={deck.coverImageUrl} alt={`Capa de ${deck.name}`} />
+                  <CardArt src={deck.coverImageUrl} alt={t("decks.coverOf", { name: deck.name })} />
                 </div>
               </Link>
               <Stack gap={6} p="sm" style={{ flex: 1, minWidth: 0 }}>
@@ -150,27 +139,27 @@ export function DeckListPanel({ initialDecks }: { initialDecks: DeckDto[] }) {
                 </Text>
                 <Group gap={6} wrap="wrap">
                   <Badge variant="light" color="ink">
-                    {deck.format.name}
+                    {tEnum("format", deck.format.name)}
                   </Badge>
                   <Badge
                     variant="light"
                     color={deck.physicalStatus === "SLEEVED" ? "green" : "gray"}
                   >
-                    {deck.physicalStatus === "SLEEVED" ? "SLEEVED" : "NOT_SLEEVED"}
+                    {tEnum("physicalStatus", deck.physicalStatus)}
                   </Badge>
                   {deck.importStatus ? (
                     <Badge variant="outline" color="ember">
-                      {IMPORT_LABELS[deck.importStatus] ?? deck.importStatus}
+                      {tEnum("importStatus", deck.importStatus)}
                     </Badge>
                   ) : null}
                   {deck.tags.map((tag) => (
                     <Badge key={tag} variant="dot" color="gray">
-                      {TAG_LABELS[tag] ?? tag}
+                      {tEnum("deckTag", tag)}
                     </Badge>
                   ))}
                 </Group>
                 <Text size="sm" c="dimmed" lineClamp={2}>
-                  {deck.cardCount} cartas
+                  {t("common.cards", { count: deck.cardCount })}
                   {deck.description ? ` · ${deck.description}` : ""}
                 </Text>
                 <Group gap="xs" mt="auto" pt={4}>
@@ -180,24 +169,24 @@ export function DeckListPanel({ initialDecks }: { initialDecks: DeckDto[] }) {
                     variant="subtle"
                     size="compact-sm"
                   >
-                    Editar
+                    {t("common.edit")}
                   </Button>
                   <Button
                     variant="subtle"
                     size="compact-sm"
                     onClick={() => setCoverDeckId(deck.id)}
                   >
-                    Capa
+                    {t("decks.cover")}
                   </Button>
                   <Button
                     variant="subtle"
                     color="red"
                     size="compact-sm"
-                    aria-label={`Excluir ${deck.name}`}
+                    aria-label={t("decks.deleteNamed", { name: deck.name })}
                     loading={pendingId === deck.id}
                     onClick={() => onDelete(deck.id)}
                   >
-                    Excluir
+                    {t("common.delete")}
                   </Button>
                 </Group>
               </Stack>

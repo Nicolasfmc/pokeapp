@@ -4,6 +4,8 @@ import Link from "next/link";
 import { AppShell, Box, Burger, Button, Group, Text, useMantineColorScheme } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { AppNav } from "@/components/shell/AppNav";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { LanguageSwitcher } from "@/components/shell/LanguageSwitcher";
 
 // Labels must not depend on the color scheme during render: the server always
 // renders light, so a dark user would get a hydration mismatch (which forces a
@@ -11,20 +13,21 @@ import { AppNav } from "@/components/shell/AppNav";
 // Both labels are rendered and CSS (lightHidden/darkHidden) shows the right one.
 function ColorSchemeToggle() {
   const { toggleColorScheme } = useMantineColorScheme();
+  const { t } = useI18n();
 
   return (
     <Button
       variant="subtle"
       color="ink"
       size="compact-sm"
-      aria-label="Alternar tema claro/escuro"
+      aria-label={t("shell.toggleTheme")}
       onClick={toggleColorScheme}
     >
       <Box component="span" lightHidden>
-        Tema claro
+        {t("shell.lightTheme")}
       </Box>
       <Box component="span" darkHidden>
-        Tema escuro
+        {t("shell.darkTheme")}
       </Box>
     </Button>
   );
@@ -32,6 +35,7 @@ function ColorSchemeToggle() {
 
 export function AppShellLayout({ children }: { children: React.ReactNode }) {
   const [opened, { toggle, close }] = useDisclosure(false);
+  const { t } = useI18n();
 
   return (
     <AppShell
@@ -52,17 +56,21 @@ export function AppShellLayout({ children }: { children: React.ReactNode }) {
               onClick={toggle}
               hiddenFrom="sm"
               size="sm"
-              aria-label="Abrir navegação"
+              aria-label={t("shell.openNav")}
             />
             <Text
               component={Link}
               href="/"
+              onClick={close}
               className="font-[family-name:var(--font-space-grotesk)] text-xl font-bold tracking-tight text-[var(--sb-ink)] no-underline"
             >
               SleeveBuild
             </Text>
           </Group>
-          <ColorSchemeToggle />
+          <Group gap={4} wrap="nowrap">
+            <LanguageSwitcher />
+            <ColorSchemeToggle />
+          </Group>
         </Group>
       </AppShell.Header>
 

@@ -3,10 +3,12 @@ import { requireUser } from "@/server/auth";
 import { listDecks } from "@/modules/decks";
 import { listArchetypes, listMatches } from "@/modules/training";
 import { TrainingPanel } from "@/modules/training/TrainingPanel";
+import { getTranslator } from "@/lib/i18n/server";
 
-export const metadata: Metadata = {
-  title: "Training",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslator();
+  return { title: t("nav.training") };
+}
 
 export default async function TrainingPage() {
   const user = await requireUser();
