@@ -16,6 +16,9 @@ export const primaryNav: NavItem[] = [
   { labelKey: "nav.profile", href: "/profile" },
 ];
 
+/** Shown only to admin accounts (the page itself also checks). */
+export const adminNav: NavItem = { labelKey: "nav.admin", href: "/admin" };
+
 export function isNavActive(pathname: string, href: string) {
   if (href === "/") {
     return pathname === "/";

@@ -1,3 +1,4 @@
+import { admin } from "./admin";
 import { auth } from "./auth";
 import { cards } from "./cards";
 import { common, enums } from "./common";
@@ -25,6 +26,7 @@ export const messages = {
   ...tournaments,
   ...statistics,
   ...profile,
+  ...admin,
 } as const;
 
 export type MessageKey = keyof typeof messages;

@@ -79,6 +79,8 @@ model User {
   username            String        @unique
   passwordHash        String
   accountStatus       AccountStatus @default(ACTIVE)
+  /// Grants access to /admin. Set only directly in the database.
+  isAdmin             Boolean       @default(false)
   usernameChangedAt   DateTime?
   deletionRequestedAt DateTime?
   createdAt           DateTime      @default(now())

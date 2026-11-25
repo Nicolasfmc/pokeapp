@@ -33,7 +33,13 @@ function ColorSchemeToggle() {
   );
 }
 
-export function AppShellLayout({ children }: { children: React.ReactNode }) {
+export function AppShellLayout({
+  children,
+  isAdmin = false,
+}: {
+  children: React.ReactNode;
+  isAdmin?: boolean;
+}) {
   const [opened, { toggle, close }] = useDisclosure(false);
   const { t } = useI18n();
 
@@ -76,7 +82,7 @@ export function AppShellLayout({ children }: { children: React.ReactNode }) {
 
       <AppShell.Navbar className="border-r border-[var(--sb-line)] bg-[var(--sb-nav)]">
         <AppShell.Section grow>
-          <AppNav onNavigate={close} />
+          <AppNav onNavigate={close} isAdmin={isAdmin} />
         </AppShell.Section>
       </AppShell.Navbar>
 

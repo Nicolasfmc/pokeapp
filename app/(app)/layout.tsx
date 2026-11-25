@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { AppShellLayout } from "@/components/shell/AppShellLayout";
 import { getSession } from "@/server/auth";
+import { isAdminUser } from "@/server/services/admin";
 
 export default async function AppLayout({
   children,
@@ -12,5 +13,7 @@ export default async function AppLayout({
     redirect("/login");
   }
 
-  return <AppShellLayout>{children}</AppShellLayout>;
+  const isAdmin = await isAdminUser(session.id);
+
+  return <AppShellLayout isAdmin={isAdmin}>{children}</AppShellLayout>;
 }

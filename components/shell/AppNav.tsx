@@ -3,20 +3,21 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NavLink, Stack } from "@mantine/core";
-import { isNavActive, primaryNav } from "@/components/shell/nav-config";
+import { adminNav, isNavActive, primaryNav } from "@/components/shell/nav-config";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 
 type AppNavProps = {
   onNavigate?: () => void;
+  isAdmin?: boolean;
 };
 
-export function AppNav({ onNavigate }: AppNavProps) {
+export function AppNav({ onNavigate, isAdmin = false }: AppNavProps) {
   const pathname = usePathname();
   const { t } = useI18n();
 
   return (
     <Stack gap={4} p="sm">
-      {primaryNav.map((item) => (
+      {(isAdmin ? [...primaryNav, adminNav] : primaryNav).map((item) => (
         <NavLink
           key={item.href}
           component={Link}
