@@ -5,10 +5,12 @@ import {
   getStatisticsSummary,
 } from "@/modules/statistics";
 import { StatisticsPanel } from "@/modules/statistics/StatisticsPanel";
+import { getTranslator } from "@/lib/i18n/server";
 
-export const metadata: Metadata = {
-  title: "Statistics",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslator();
+  return { title: t("nav.statistics") };
+}
 
 export default async function StatisticsPage() {
   const user = await requireUser();

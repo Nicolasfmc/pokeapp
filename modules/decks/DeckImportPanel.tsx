@@ -19,6 +19,7 @@ import {
 import type { InventoryCheckResult } from "@/server/services/inventory-check-compute";
 import { InventoryCheckTable } from "./DeckInventoryCheckPanel";
 import type { DeckDto, UnresolvedImportLine } from "./types";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 type FormatOption = {
   id: string;
@@ -54,32 +55,33 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 function ImportReportView({ report, onReset }: { report: ImportReport; onReset: () => void }) {
+  const { t, te, tEnum } = useI18n();
   const total = report.resolvedCount + report.unresolvedCount;
   const status = report.deck.importStatus ?? "IMPORTED";
   return (
     <Stack gap="lg" className="max-w-4xl animate-[sb-rise_0.45s_ease-out]">
       <div>
         <Group gap="sm">
-          <Title order={2}>Importação: {report.deck.name}</Title>
+          <Title order={2}>{t("decks.importOf", { name: report.deck.name })}</Title>
           <Badge color={STATUS_COLOR[status] ?? "gray"} variant="light" size="lg">
-            {status}
+            {tEnum("importStatus", status)}
           </Badge>
         </Group>
         <Text c="dimmed" size="sm" mt={4}>
-          {report.resolvedCount} / {total} cartas resolvidas
+          {t("decks.resolvedOf", { resolved: report.resolvedCount, total })}
           {report.unresolvedCount > 0
-            ? ` · ${report.unresolvedCount} carta(s) não resolvida(s)`
+            ? ` · ${t("decks.unresolvedCount", { count: report.unresolvedCount })}`
             : ""}
         </Text>
       </div>
 
       {report.unresolved.length > 0 ? (
-        <Alert color="yellow" title="Cartas não resolvidas">
+        <Alert color="yellow" title={t("decks.unresolvedTitle")}>
           <Stack gap={2}>
             {report.unresolved.map((line, i) => (
               <Text key={`${line.setCode}-${line.collectorNumber}-${i}`} size="sm">
                 {line.quantity} {line.name} {line.setCode} {line.collectorNumber} —{" "}
-                {line.reason}
+                {te(line.reason)}
               </Text>
             ))}
           </Stack>
@@ -87,12 +89,12 @@ function ImportReportView({ report, onReset }: { report: ImportReport; onReset: 
       ) : null}
 
       {report.parseErrors.length > 0 ? (
-        <Alert color="orange" title="Linhas ignoradas pelo parser">
+        <Alert color="orange" title={t("decks.parseErrorsTitle")}>
           <Stack gap={2}>
             {report.parseErrors.map((err, i) => (
               <Text key={`${err.code}-${i}`} size="sm">
-                {err.lineNumber ? `Linha ${err.lineNumber}: ` : ""}
-                {err.message}
+                {err.lineNumber ? t("decks.lineN", { n: err.lineNumber }) : ""}
+                {te(err.message)}
               </Text>
             ))}
           </Stack>
@@ -100,12 +102,11 @@ function ImportReportView({ report, onReset }: { report: ImportReport; onReset: 
       ) : null}
 
       {report.nameMismatches.length > 0 ? (
-        <Alert color="blue" title="Nome diferente do resolvido (verifique)">
+        <Alert color="blue" title={t("decks.nameMismatchTitle")}>
           <Stack gap={2}>
             {report.nameMismatches.map((m, i) => (
               <Text key={`${m.setCode}-${m.collectorNumber}-${i}`} size="sm">
-                {m.setCode} {m.collectorNumber}: lista diz “{m.expected}”, banco tem “
-                {m.resolved}”
+                {t("decks.nameMismatch", { code: `${m.setCode} ${m.collectorNumber}`, expected: m.expected, resolved: m.resolved })}
               </Text>
             ))}
           </Stack>
@@ -117,19 +118,19 @@ function ImportReportView({ report, onReset }: { report: ImportReport; onReset: 
         className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/85 p-4"
       >
         <Group gap="sm">
-          <Text fw={700}>Validação de formato ({report.deck.format.name})</Text>
+          <Text fw={700}>{t("decks.formatValidation", { format: tEnum("format", report.deck.format.name) })}</Text>
           <Badge color={report.validation.valid ? "green" : "red"} variant="light">
-            {report.validation.valid ? "Válido" : "Inválido"}
+            {report.validation.valid ? t("decks.valid") : t("decks.invalid")}
           </Badge>
         </Group>
         {report.validation.errors.map((issue, i) => (
           <Text key={`${issue.code}-${i}`} size="sm" c="red">
-            {issue.message}
+            {te(issue.message)}
           </Text>
         ))}
         {report.validation.warnings.map((issue, i) => (
           <Text key={`${issue.code}-${i}`} size="sm" c="orange">
-            {issue.message}
+            {te(issue.message)}
           </Text>
         ))}
       </Stack>
@@ -144,24 +145,21 @@ function ImportReportView({ report, onReset }: { report: ImportReport; onReset: 
 
       <Group justify="space-between">
         <Button variant="subtle" onClick={onReset}>
-          Importar outra lista
+          {t("decks.importAnother")}
         </Button>
         <Button component={Link} href={`/decks/${report.deck.id}`}>
-          Abrir deck
+          {t("decks.openDeck")}
         </Button>
       </Group>
     </Stack>
   );
 }
 
-const TAG_OPTIONS = [
-  { value: "FAVORITE", label: "Favorito" },
-  { value: "TESTING", label: "Testando" },
-  { value: "ARCHIVED", label: "Arquivado" },
-] as const;
+const TAG_VALUES = ["FAVORITE", "TESTING", "ARCHIVED"] as const;
 
 export function DeckImportPanel() {
   const router = useRouter();
+  const { t, te, tEnum } = useI18n();
   const [formats, setFormats] = useState<FormatOption[]>([]);
   const [name, setName] = useState("");
   const [formatId, setFormatId] = useState<string | null>(null);
@@ -184,7 +182,7 @@ export function DeckImportPanel() {
         };
         if (!response.ok) {
           if (!cancelled) {
-            setError(data.error ?? "Falha ao carregar formatos.");
+            setError(te(data.error) ?? t("decks.loadFormatsFailed"));
             setLoadingFormats(false);
           }
           return;
@@ -199,7 +197,7 @@ export function DeckImportPanel() {
         }
       } catch {
         if (!cancelled) {
-          setError("Não foi possível carregar formatos.");
+          setError(t("decks.loadFormatsError"));
           setLoadingFormats(false);
         }
       }
@@ -207,7 +205,7 @@ export function DeckImportPanel() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t, te]);
 
   function toggleTag(tag: string) {
     setTags((prev) =>
@@ -236,7 +234,7 @@ export function DeckImportPanel() {
         error?: string;
       };
       if (!response.ok || !data.deck) {
-        setError(data.error ?? "Falha na importação.");
+        setError(te(data.error) ?? t("decks.importFailed"));
         setPending(false);
         return;
       }
@@ -244,7 +242,7 @@ export function DeckImportPanel() {
       setPending(false);
       startTransition(() => router.refresh());
     } catch {
-      setError("Não foi possível importar a lista.");
+      setError(t("decks.importError"));
       setPending(false);
     }
   }
@@ -265,10 +263,9 @@ export function DeckImportPanel() {
   return (
     <Stack gap="lg" className="max-w-3xl animate-[sb-rise_0.45s_ease-out]">
       <div>
-        <Title order={2}>Importar Limitless</Title>
+        <Title order={2}>{t("decks.importLimitless")}</Title>
         <Text c="dimmed" size="sm" mt={4}>
-          Cole a lista no formato quantity · name · set · collector. A resolução
-          usa set + número no banco local.
+          {t("decks.importSubtitle")}
         </Text>
       </div>
 
@@ -280,16 +277,16 @@ export function DeckImportPanel() {
           {error ? <Alert color="red">{error}</Alert> : null}
 
           <TextInput
-            label="Nome do deck"
+            label={t("decks.deckName")}
             required
             value={name}
             onChange={(e) => setName(e.currentTarget.value)}
           />
 
           <Select
-            label="Formato"
+            label={t("common.format")}
             required
-            data={formats.map((f) => ({ value: f.id, label: f.name }))}
+            data={formats.map((f) => ({ value: f.id, label: tEnum("format", f.name) }))}
             value={formatId}
             onChange={setFormatId}
             disabled={loadingFormats}
@@ -297,7 +294,7 @@ export function DeckImportPanel() {
           />
 
           <Textarea
-            label="Descrição"
+            label={t("common.description")}
             value={description}
             onChange={(e) => setDescription(e.currentTarget.value)}
             minRows={2}
@@ -305,22 +302,22 @@ export function DeckImportPanel() {
 
           <Stack gap="xs">
             <Text size="sm" fw={500}>
-              Tags
+              {t("common.tags")}
             </Text>
             <Group gap="md">
-              {TAG_OPTIONS.map((tag) => (
+              {TAG_VALUES.map((tag) => (
                 <Checkbox
-                  key={tag.value}
-                  label={tag.label}
-                  checked={tags.includes(tag.value)}
-                  onChange={() => toggleTag(tag.value)}
+                  key={tag}
+                  label={tEnum("deckTag", tag)}
+                  checked={tags.includes(tag)}
+                  onChange={() => toggleTag(tag)}
                 />
               ))}
             </Group>
           </Stack>
 
           <Textarea
-            label="Decklist Limitless"
+            label={t("decks.limitlessDecklist")}
             required
             value={decklist}
             onChange={(e) => setDecklist(e.currentTarget.value)}
@@ -336,14 +333,14 @@ export function DeckImportPanel() {
 
           <Group justify="space-between" mt="sm">
             <Button component={Link} href="/decks" variant="subtle">
-              Cancelar
+              {t("common.cancel")}
             </Button>
             <Button
               type="submit"
               loading={pending}
               disabled={!formatId || !decklist.trim()}
             >
-              Importar
+              {t("decks.import")}
             </Button>
           </Group>
         </Stack>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CardsServiceError, getPrintingById } from "@/modules/cards";
 import { CardPrintingDetail } from "@/modules/cards/ui/CardPrintingDetail";
+import { getTranslator } from "@/lib/i18n/server";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -15,7 +16,8 @@ export async function generateMetadata({
     const printing = await getPrintingById(id);
     return { title: printing.name };
   } catch {
-    return { title: "Carta" };
+    const { t } = await getTranslator();
+    return { title: t("cards.card") };
   }
 }
 

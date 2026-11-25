@@ -10,13 +10,15 @@ import { CardImage } from "./CardImage";
 import { CardPrintingThumb } from "./CardPrintingThumb";
 import { CardsPagination } from "./CardsPagination";
 import { CardsSearchFilters } from "./CardsSearchFilters";
+import { getTranslator } from "@/lib/i18n/server";
 
 type CardsSearchViewProps = {
   initialSets: CardSetDto[];
   result: CardSearchResult;
 };
 
-export function CardsSearchView({ initialSets, result }: CardsSearchViewProps) {
+export async function CardsSearchView({ initialSets, result }: CardsSearchViewProps) {
+  const { t, tEnum } = await getTranslator();
   const totalPages = Math.max(1, Math.ceil(result.total / result.pageSize));
 
   return (
@@ -27,18 +29,17 @@ export function CardsSearchView({ initialSets, result }: CardsSearchViewProps) {
             order={1}
             className="font-[family-name:var(--font-space-grotesk)] text-3xl tracking-tight"
           >
-            Cards
+            {t("nav.cards")}
           </Title>
           <Text className="mt-2 max-w-2xl text-[color-mix(in_srgb,var(--sb-ink)_75%,transparent)]">
-            Cartas iguais (reprints e artes alternativas) aparecem unificadas;
-            clique numa carta para escolher uma impressão específica.
+            {t("cards.subtitle")}
           </Text>
         </div>
 
         <CardsSearchFilters initialSets={initialSets} />
 
         <Text size="sm" c="dimmed">
-          {result.total} resultado{result.total === 1 ? "" : "s"}
+          {result.total === 1 ? t("cards.result") : t("cards.results", { count: result.total })}
         </Text>
 
         {result.mode === "logical" ? (
@@ -48,7 +49,7 @@ export function CardsSearchView({ initialSets, result }: CardsSearchViewProps) {
                 key={logical.id}
                 href={`/cards/logical/${logical.id}`}
                 className="group flex flex-col gap-2 no-underline text-[var(--sb-ink)] transition-transform hover:-translate-y-0.5"
-                title="Ver todas as impressões"
+                title={t("cards.seeAllPrintings")}
               >
                 <CardImage
                   src={logical.imageUrl}
@@ -61,8 +62,8 @@ export function CardsSearchView({ initialSets, result }: CardsSearchViewProps) {
                   </Text>
                   <Text size="xs" c="dimmed" mt={2}>
                     {logical.printingCount !== undefined
-                      ? `${logical.printingCount} impressão(ões) · escolher`
-                      : logical.category}
+                      ? t("cards.printingCountPick", { count: logical.printingCount })
+                      : tEnum("category", logical.category)}
                   </Text>
                 </div>
               </Link>
@@ -77,14 +78,14 @@ export function CardsSearchView({ initialSets, result }: CardsSearchViewProps) {
         )}
 
         {result.total === 0 ? (
-          <Text c="dimmed">Nenhuma carta encontrada com esses filtros.</Text>
+          <Text c="dimmed">{t("cards.noResults")}</Text>
         ) : null}
 
         <CardsPagination page={result.page} totalPages={totalPages} />
 
         <div>
           <Title order={3} size="h4" mb="sm">
-            Sets recentes
+            {t("cards.recentSets")}
           </Title>
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="sm">
             {initialSets.slice(0, 9).map((set) => (

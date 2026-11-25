@@ -1,0 +1,41 @@
+import { defineMessages } from "../define";
+
+export const inventory = defineMessages({
+  "inventory.opFailed": ["Inventory operation failed.", "Falha na operação de inventário."],
+  "inventory.loadError": ["Couldn't load the inventory.", "Não foi possível carregar o inventário."],
+  "inventory.addError": ["Couldn't add the card.", "Não foi possível adicionar a carta."],
+  "inventory.adjustError": ["Couldn't adjust the quantity.", "Não foi possível ajustar a quantidade."],
+  "inventory.historyError": ["Couldn't load the history.", "Não foi possível carregar o histórico."],
+  "inventory.subtitle": [
+    "Track physical copies by printing, condition and status. The competitive reserve and trade availability are calculated per card.",
+    "Controle cópias físicas por impressão, condição e status. Reserva competitiva e disponibilidade para troca são calculadas por carta lógica.",
+  ],
+  "inventory.addCard": ["Add card", "Adicionar carta"],
+  "inventory.condition": ["Condition", "Condição"],
+  "inventory.cardLanguage": ["Language", "Idioma"],
+  "inventory.reason": ["Reason", "Motivo"],
+  "inventory.unify": ["Unify collections", "Unificar coleções"],
+  "inventory.unifyHint": [
+    "The same card across several sets becomes a single tile",
+    "Mesma carta em vários sets vira um card só",
+  ],
+  "inventory.adjustReason": ["Adjustment reason ±", "Motivo do ajuste ±"],
+  "inventory.searchPlaceholder": ["Name, set, localId…", "Nome, set, localId…"],
+  "inventory.empty": ["No items in the inventory.", "Nenhum item no inventário."],
+  "inventory.openNamed": ["Open {name}", "Abrir {name}"],
+  "inventory.sleevedCount": ["{count} sleeved", "{count} sleevadas"],
+  "inventory.lotsTrade": ["{count} lots · trade {trade}", "{count} lotes · troca {trade}"],
+  "inventory.groupSummary": [
+    "Card: owned {owned} · sleeved {sleeved} · protected {protected} · available to trade {trade}",
+    "Carta lógica: possuídas {owned} · sleevadas {sleeved} · protegidas {protected} · disponíveis p/ troca {trade}",
+  ],
+  "inventory.sleevedN": ["Sleeved {count}", "Sleevadas {count}"],
+  "inventory.decrease": ["Decrease", "Diminuir"],
+  "inventory.increase": ["Increase", "Aumentar"],
+  "inventory.hideHistory": ["Hide history", "Ocultar histórico"],
+  "inventory.history": ["History", "Histórico"],
+  "inventory.noTransactions": ["No transactions.", "Sem transações."],
+  "picker.label": ["Card (printing)", "Carta (impressão)"],
+  "picker.placeholder": ["Name, “TEF 144” or sv05-144", "Nome, “TEF 144” ou sv05-144"],
+  "picker.nothingFound": ["No printings", "Nenhuma impressão"],
+});

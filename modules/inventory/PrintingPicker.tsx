@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Group, Loader, Select, Text } from "@mantine/core";
 import { CardThumb } from "@/modules/cards/ui/CardImage";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 type PrintingResult = {
   id: string;
@@ -29,6 +30,7 @@ function labelFor(p: PrintingResult) {
  * Aceita nome ("Buddy-Buddy Poffin"), "TEF 144" ou tcgdex id ("sv05-144").
  */
 export function PrintingPicker({ value, onChange }: Props) {
+  const { t } = useI18n();
   const [search, setSearch] = useState("");
   const [options, setOptions] = useState<
     Array<{ value: string; label: string; imageUrl: string | null }>
@@ -91,8 +93,8 @@ export function PrintingPicker({ value, onChange }: Props) {
 
   return (
     <Select
-      label="Carta (impressão)"
-      placeholder="Nome, “TEF 144” ou sv05-144"
+      label={t("picker.label")}
+      placeholder={t("picker.placeholder")}
       searchable
       clearable
       required
@@ -118,7 +120,7 @@ export function PrintingPicker({ value, onChange }: Props) {
           </Group>
         );
       }}
-      nothingFoundMessage={search.trim().length >= 2 && !loading ? "Nenhuma impressão" : undefined}
+      nothingFoundMessage={search.trim().length >= 2 && !loading ? t("picker.nothingFound") : undefined}
       rightSection={loading ? <Loader size="xs" /> : undefined}
       className="min-w-[260px] flex-[2]"
     />

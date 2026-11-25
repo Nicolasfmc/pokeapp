@@ -23,6 +23,7 @@ import { DeckInventoryCheckPanel } from "./DeckInventoryCheckPanel";
 import { DeckCardSearch, type DeckSearchPick } from "./DeckCardSearch";
 import { DeckCoverPicker } from "./DeckCoverPicker";
 import { CardArt, CardImage } from "@/modules/cards/ui/CardImage";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 type FormatOption = {
   id: string;
@@ -40,30 +41,15 @@ type ValidationPayload = {
   };
 };
 
-const TAG_OPTIONS = [
-  { value: "FAVORITE", label: "Favorito" },
-  { value: "TESTING", label: "Testando" },
-  { value: "ARCHIVED", label: "Arquivado" },
-] as const;
+const TAG_VALUES = ["FAVORITE", "TESTING", "ARCHIVED"] as const;
 
 const CATEGORY_ORDER = ["POKEMON", "TRAINER", "ENERGY"] as const;
-const CATEGORY_LABEL: Record<string, string> = {
-  POKEMON: "Pokémon",
-  TRAINER: "Trainer",
-  ENERGY: "Energy",
-};
-
-const IMPORT_LABELS: Record<string, string> = {
-  IMPORTED: "Importado",
-  PARTIALLY_RESOLVED: "Parcialmente resolvido",
-  READY: "Pronto",
-  INVALID: "Inválido",
-};
 
 type EditableCard = DeckCardDto;
 
 export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
   const router = useRouter();
+  const { t, te, tEnum } = useI18n();
   const [deck, setDeck] = useState(initialDeck);
   const [formats, setFormats] = useState<FormatOption[]>([]);
   const [name, setName] = useState(initialDeck.name);
@@ -185,16 +171,16 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
       });
       const data = (await response.json()) as { deck?: DeckDto; error?: string };
       if (!response.ok || !data.deck) {
-        setError(data.error ?? "Falha ao salvar metadados.");
+        setError(te(data.error) ?? t("editor.saveMetaFailed"));
         setMetaPending(false);
         return;
       }
       setDeck(data.deck);
-      setMessage("Metadados salvos.");
+      setMessage(t("editor.metaSaved"));
       setMetaPending(false);
       startTransition(() => router.refresh());
     } catch {
-      setError("Não foi possível salvar metadados.");
+      setError(t("editor.saveMetaError"));
       setMetaPending(false);
     }
   }
@@ -220,18 +206,18 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
         error?: string;
       };
       if (!response.ok || !data.deck) {
-        setError(data.error ?? "Falha ao salvar cartas.");
+        setError(te(data.error) ?? t("editor.saveCardsFailed"));
         setCardsPending(false);
         return;
       }
       setDeck(data.deck);
       setCards(data.deck.cards);
       if (data.validation) setValidation(data.validation);
-      setMessage("Cartas salvas.");
+      setMessage(t("editor.cardsSaved"));
       setCardsPending(false);
       startTransition(() => router.refresh());
     } catch {
-      setError("Não foi possível salvar as cartas.");
+      setError(t("editor.saveCardsError"));
       setCardsPending(false);
     }
   }
@@ -249,7 +235,7 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
         error?: string;
       };
       if (!response.ok || !data.validation) {
-        setError(data.error ?? "Falha na validação.");
+        setError(te(data.error) ?? t("editor.validateFailed"));
         setValidatePending(false);
         return;
       }
@@ -260,7 +246,7 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
       setValidation(data.validation);
       setValidatePending(false);
     } catch {
-      setError("Não foi possível validar o deck.");
+      setError(t("editor.validateError"));
       setValidatePending(false);
     }
   }
@@ -284,21 +270,20 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
               variant="light"
               color={deck.physicalStatus === "SLEEVED" ? "green" : "gray"}
             >
-              {deck.physicalStatus === "SLEEVED" ? "SLEEVED" : "NOT_SLEEVED"}
+              {tEnum("physicalStatus", deck.physicalStatus)}
             </Badge>
             {deck.importStatus ? (
               <Badge variant="light" color="ember">
-                {IMPORT_LABELS[deck.importStatus] ?? deck.importStatus}
+                {tEnum("importStatus", deck.importStatus)}
               </Badge>
             ) : null}
           </Group>
           <Text c="dimmed" size="sm">
-            Deckbuilder lógico · {deck.format.name} ·{" "}
-            {totals.total} cartas
+            {t("editor.subtitle", { format: tEnum("format", deck.format.name), count: totals.total })}
           </Text>
         </div>
         <Button component={Link} href="/decks" variant="subtle">
-          Voltar
+          {t("common.back")}
         </Button>
       </Group>
 
@@ -312,18 +297,18 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
               gap="md"
               className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/85 p-4"
             >
-              <Text fw={700}>Metadados</Text>
+              <Text fw={700}>{t("editor.details")}</Text>
               <Stack gap={6}>
                 <Text size="sm" fw={500}>
-                  Capa do deck
+                  {t("editor.deckCover")}
                 </Text>
                 <button
                   type="button"
                   onClick={() => setCoverOpen(true)}
                   className="w-full max-w-[200px] cursor-pointer overflow-hidden rounded-lg border-0 p-0 ring-1 sm:max-w-none ring-[var(--sb-line)] hover:ring-[var(--sb-accent)]"
-                  aria-label="Escolher capa do deck"
+                  aria-label={t("editor.chooseCoverAria")}
                 >
-                  <CardArt src={deck.coverImageUrl} alt={`Capa de ${deck.name}`} />
+                  <CardArt src={deck.coverImageUrl} alt={t("decks.coverOf", { name: deck.name })} />
                 </button>
                 <Button
                   size="compact-sm"
@@ -331,43 +316,43 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
                   onClick={() => setCoverOpen(true)}
                   w="fit-content"
                 >
-                  Escolher capa
+                  {t("editor.chooseCover")}
                 </Button>
               </Stack>
               <TextInput
-                label="Nome"
+                label={t("common.name")}
                 value={name}
                 onChange={(e) => setName(e.currentTarget.value)}
                 required
               />
               <Select
-                label="Formato"
-                data={formats.map((f) => ({ value: f.id, label: f.name }))}
+                label={t("common.format")}
+                data={formats.map((f) => ({ value: f.id, label: tEnum("format", f.name) }))}
                 value={formatId}
                 onChange={(value) => value && setFormatId(value)}
                 searchable
               />
               <Textarea
-                label="Descrição"
+                label={t("common.description")}
                 value={description}
                 onChange={(e) => setDescription(e.currentTarget.value)}
                 minRows={2}
               />
               <Stack gap="xs">
                 <Text size="sm" fw={500}>
-                  Tags
+                  {t("common.tags")}
                 </Text>
-                {TAG_OPTIONS.map((tag) => (
+                {TAG_VALUES.map((tag) => (
                   <Checkbox
-                    key={tag.value}
-                    label={tag.label}
-                    checked={tags.includes(tag.value)}
-                    onChange={() => toggleTag(tag.value)}
+                    key={tag}
+                    label={tEnum("deckTag", tag)}
+                    checked={tags.includes(tag)}
+                    onChange={() => toggleTag(tag)}
                   />
                 ))}
               </Stack>
               <Button type="submit" loading={metaPending}>
-                Salvar metadados
+                {t("editor.saveDetails")}
               </Button>
             </Stack>
           </form>
@@ -376,13 +361,14 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
             gap="sm"
             className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/85 p-4"
           >
-            <Text fw={700}>Resumo</Text>
+            <Text fw={700}>{t("editor.summary")}</Text>
             <Text size="sm">
-              Pokémon: {totals.byCategory.POKEMON} · Trainer:{" "}
-              {totals.byCategory.TRAINER} · Energy: {totals.byCategory.ENERGY}
+              {tEnum("category", "POKEMON")}: {totals.byCategory.POKEMON} ·{" "}
+              {tEnum("category", "TRAINER")}: {totals.byCategory.TRAINER} ·{" "}
+              {tEnum("category", "ENERGY")}: {totals.byCategory.ENERGY}
             </Text>
             <Text size="sm" fw={600}>
-              Total: {totals.total}
+              {t("editor.total", { count: totals.total })}
             </Text>
             <Group gap="sm">
               <Button
@@ -390,20 +376,20 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
                 loading={validatePending}
                 onClick={onValidate}
               >
-                Validar formato
+                {t("editor.validateFormat")}
               </Button>
               <Button loading={cardsPending} onClick={onSaveCards}>
-                Salvar cartas
+                {t("editor.saveCards")}
               </Button>
             </Group>
             {validation ? (
               <Stack gap={6} mt="xs">
                 <Badge color={validation.valid ? "green" : "red"} variant="light">
-                  {validation.valid ? "Válido" : "Inválido"}
+                  {validation.valid ? t("decks.valid") : t("decks.invalid")}
                 </Badge>
                 {validation.errors.map((issue) => (
                   <Text key={`${issue.code}-${issue.message}`} size="xs" c="red">
-                    {issue.message}
+                    {te(issue.message)}
                   </Text>
                 ))}
                 {validation.warnings.map((issue) => (
@@ -412,7 +398,7 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
                     size="xs"
                     c="orange"
                   >
-                    {issue.message}
+                    {te(issue.message)}
                   </Text>
                 ))}
               </Stack>
@@ -428,7 +414,7 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
             quantities={quantities}
             onAdd={(card) => {
               addCopies(card, 1);
-              setMessage(`Adicionada: ${card.canonicalName} (lembre de salvar as cartas)`);
+              setMessage(t("editor.added", { name: card.canonicalName }));
             }}
           />
 
@@ -437,9 +423,9 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
               gap="xs"
               className="rounded-xl border border-dashed border-[var(--sb-line)] px-5 py-8"
             >
-              <Text fw={600}>Lista vazia</Text>
+              <Text fw={600}>{t("editor.emptyList")}</Text>
               <Text size="sm" c="dimmed">
-                Busque cartas acima e clique na imagem para adicionar, ou importe uma lista Limitless.
+                {t("editor.emptyHint")}
               </Text>
               <Button
                 component={Link}
@@ -447,7 +433,7 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
                 variant="light"
                 w="fit-content"
               >
-                Ir para importação
+                {t("editor.goToImport")}
               </Button>
             </Stack>
           ) : (
@@ -459,7 +445,7 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
               >
                 <Group justify="space-between">
                   <Text fw={700}>
-                    {CATEGORY_LABEL[group.category] ?? group.category}
+                    {tEnum("category", group.category)}
                   </Text>
                   <Text size="sm" c="dimmed">
                     {group.cards.reduce((s, c) => s + c.quantity, 0)}
@@ -479,7 +465,7 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
                             radius="xl"
                             variant="filled"
                             color="dark"
-                            aria-label={`Remover uma cópia de ${card.canonicalName}`}
+                            aria-label={t("editor.removeCopy", { name: card.canonicalName })}
                             onClick={() =>
                               updateQuantity(card.logicalCardId, card.quantity - 1)
                             }
@@ -495,7 +481,7 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
                             radius="xl"
                             variant="filled"
                             color="ember"
-                            aria-label={`Adicionar uma cópia de ${card.canonicalName}`}
+                            aria-label={t("editor.addCopy", { name: card.canonicalName })}
                             disabled={card.quantity >= 99}
                             onClick={() =>
                               updateQuantity(card.logicalCardId, card.quantity + 1)

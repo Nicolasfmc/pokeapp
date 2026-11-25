@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CardsServiceError, getLogicalById } from "@/modules/cards";
 import { CardLogicalDetail } from "@/modules/cards/ui/CardLogicalDetail";
+import { getTranslator } from "@/lib/i18n/server";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -15,7 +16,8 @@ export async function generateMetadata({
     const logical = await getLogicalById(id);
     return { title: logical.canonicalName };
   } catch {
-    return { title: "Carta lógica" };
+    const { t } = await getTranslator();
+    return { title: t("cards.logicalCard") };
   }
 }
 

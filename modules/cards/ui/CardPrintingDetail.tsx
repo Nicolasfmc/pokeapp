@@ -2,12 +2,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { Badge, Group, Stack, Text, Title } from "@mantine/core";
 import type { CardPrintingDto } from "../types";
+import { getTranslator } from "@/lib/i18n/server";
 
 type CardPrintingDetailProps = {
   printing: CardPrintingDto;
 };
 
-export function CardPrintingDetail({ printing }: CardPrintingDetailProps) {
+export async function CardPrintingDetail({ printing }: CardPrintingDetailProps) {
+  const { t, tEnum } = await getTranslator();
   const set = printing.set;
   const logical = printing.logicalCard;
 
@@ -19,7 +21,7 @@ export function CardPrintingDetail({ printing }: CardPrintingDetailProps) {
             href="/cards"
             className="text-sm text-[color-mix(in_srgb,var(--sb-ink)_55%,transparent)] no-underline hover:text-[var(--sb-accent)]"
           >
-            ← Voltar à busca
+            {t("cards.backToSearch")}
           </Link>
           <Title
             order={1}
@@ -47,7 +49,7 @@ export function CardPrintingDetail({ printing }: CardPrintingDetailProps) {
               />
             ) : (
               <div className="flex h-full items-center justify-center text-sm text-[color-mix(in_srgb,var(--sb-ink)_55%,transparent)]">
-                Sem imagem
+                {t("cards.noImage")}
               </div>
             )}
           </div>
@@ -55,7 +57,7 @@ export function CardPrintingDetail({ printing }: CardPrintingDetailProps) {
           <Stack gap="md">
             <Group gap="xs">
               <Badge color="ink" variant="light">
-                {printing.category}
+                {tEnum("category", printing.category)}
               </Badge>
               {printing.rarity ? (
                 <Badge color="ember" variant="light">
@@ -72,16 +74,16 @@ export function CardPrintingDetail({ printing }: CardPrintingDetailProps) {
             <dl className="m-0 grid gap-3 sm:grid-cols-2">
               <div>
                 <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
-                  Legalidade
+                  {t("cards.legality")}
                 </Text>
                 <Text size="sm">
-                  Standard: {printing.legalStandard ? "sim" : "não"} · Expanded:{" "}
-                  {printing.legalExpanded ? "sim" : "não"}
+                  {tEnum("format", "standard")}: {printing.legalStandard ? t("common.yes") : t("common.no")} ·{" "}
+                  {tEnum("format", "expanded")}: {printing.legalExpanded ? t("common.yes") : t("common.no")}
                 </Text>
               </div>
               <div>
                 <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
-                  Ilustrador
+                  {t("cards.illustrator")}
                 </Text>
                 <Text size="sm">{printing.illustrator ?? "—"}</Text>
               </div>
@@ -109,7 +111,7 @@ export function CardPrintingDetail({ printing }: CardPrintingDetailProps) {
                   href={`/cards/sets/${set.id}`}
                   className="text-sm font-semibold text-[var(--sb-accent)] no-underline hover:underline"
                 >
-                  Ver set
+                  {t("cards.seeSet")}
                 </Link>
               ) : null}
               {logical ? (
@@ -117,7 +119,7 @@ export function CardPrintingDetail({ printing }: CardPrintingDetailProps) {
                   href={`/cards/logical/${logical.id}`}
                   className="text-sm font-semibold text-[var(--sb-accent)] no-underline hover:underline"
                 >
-                  Carta lógica
+                  {t("cards.logicalCard")}
                 </Link>
               ) : null}
             </Group>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LanguageSwitcher } from "@/components/shell/LanguageSwitcher";
 
 export default function AuthLayout({
   children,
@@ -8,6 +9,9 @@ export default function AuthLayout({
   return (
     <div className="relative flex min-h-dvh flex-col items-center justify-center px-4 py-12">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--sb-glow),transparent_55%)]" />
+      <div className="absolute right-3 top-3 z-20">
+        <LanguageSwitcher />
+      </div>
       <div className="relative z-10 mb-10 text-center">
         <Link
           href="/login"

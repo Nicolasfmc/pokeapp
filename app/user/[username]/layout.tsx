@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LanguageSwitcher } from "@/components/shell/LanguageSwitcher";
 
 export default function PublicUserLayout({
   children,
@@ -15,6 +16,7 @@ export default function PublicUserLayout({
           >
             SleeveBuild
           </Link>
+          <LanguageSwitcher />
         </div>
       </header>
       <main className="relative z-10 flex-1">{children}</main>

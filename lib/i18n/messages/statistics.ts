@@ -1,0 +1,33 @@
+import { defineMessages } from "../define";
+
+export const statistics = defineMessages({
+  "stats.loadFailed": ["Failed to load statistics.", "Falha ao carregar estatísticas."],
+  "stats.subtitle": [
+    "Aggregated from your logged matches. Win rate = W / (W + L); draws and unknown results are left out of the denominator.",
+    "Agregações a partir das partidas registradas. Win rate = V / (V + D); empates e resultados indefinidos ficam fora do denominador.",
+  ],
+  "stats.filters": ["Filters", "Filtros"],
+  "stats.deck": ["Deck", "Deck"],
+  "stats.opponentArchetype": ["Opponent archetype", "Arquétipo adversário"],
+  "stats.formatCode": ["Format code", "Código de formato"],
+  "stats.tournament": ["Tournament", "Torneio"],
+  "stats.from": ["From", "De"],
+  "stats.to": ["To", "Até"],
+  "stats.apply": ["Apply", "Aplicar"],
+  "stats.matches": ["Matches", "Partidas"],
+  "stats.record": ["Record", "Placar"],
+  "stats.winRate": ["Win rate", "Win rate"],
+  "stats.decided": ["Decided (W+L)", "Decididas (V+D)"],
+  "stats.recordShort": ["{w}W / {l}L / {d}D", "{w}V / {l}D / {d}E"],
+  "stats.w": ["{n}W", "{n}V"],
+  "stats.l": ["{n}L", "{n}D"],
+  "stats.d": ["{n}D", "{n}E"],
+  "stats.byDeck": ["By deck", "Por deck"],
+  "stats.noMatches": ["No matches for the current filter.", "Nenhuma partida no filtro atual."],
+  "stats.byMatchup": ["Matchup by archetype", "Matchup por arquétipo"],
+  "stats.opponent": ["Opponent", "Adversário"],
+  "stats.undefinedArchetype": ["Archetype not set", "Arquétipo não definido"],
+  "stats.byTurn": ["By turn order", "Por ordem de turno"],
+  "stats.turn": ["Turn", "Turno"],
+  "stats.undefinedTurn": ["Unknown", "Indefinido"],
+});

@@ -16,6 +16,7 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 export type AccountSettingsUser = {
   id: string;
@@ -37,6 +38,7 @@ export function AccountSettingsPanel({
   initialUser: AccountSettingsUser;
 }) {
   const router = useRouter();
+  const { t, te, tEnum } = useI18n();
   const [user, setUser] = useState(initialUser);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
@@ -62,14 +64,14 @@ export function AccountSettingsPanel({
         error?: string;
       };
       if (!response.ok || !data.profile) {
-        setActionError(data.error ?? "Falha ao salvar perfil.");
+        setActionError(te(data.error) ?? t("profile.saveFailed"));
         return;
       }
       setUser((prev) => ({ ...prev, ...data.profile! }));
-      setActionMessage("Perfil atualizado.");
+      setActionMessage(t("profile.saved"));
       router.refresh();
     } catch {
-      setActionError("Não foi possível salvar o perfil.");
+      setActionError(t("profile.saveError"));
     } finally {
       setPending(false);
     }
@@ -82,7 +84,7 @@ export function AccountSettingsPanel({
       error?: string;
     };
     if (!response.ok || !data.user) {
-      throw new Error(data.error ?? "Não foi possível atualizar a conta.");
+      throw new Error(te(data.error) ?? t("profile.refreshError"));
     }
     setUser(data.user);
     setUsername(data.user.username);
@@ -103,17 +105,17 @@ export function AccountSettingsPanel({
       const data = (await response.json()) as { error?: string };
 
       if (!response.ok) {
-        setActionError(data.error ?? "Falha ao alterar username.");
+        setActionError(te(data.error) ?? t("profile.usernameFailed"));
         setPending(false);
         return;
       }
 
-      setActionMessage("Username atualizado.");
+      setActionMessage(t("profile.usernameSaved"));
       await refreshUser();
       setPending(false);
       router.refresh();
     } catch {
-      setActionError("Não foi possível alterar o username.");
+      setActionError(t("profile.usernameError"));
       setPending(false);
     }
   }
@@ -127,17 +129,17 @@ export function AccountSettingsPanel({
       const response = await fetch("/api/auth/deletion", { method: "POST" });
       const data = (await response.json()) as { error?: string };
       if (!response.ok) {
-        setActionError(data.error ?? "Falha ao solicitar exclusão.");
+        setActionError(te(data.error) ?? t("profile.deletionFailed"));
         setPending(false);
         return;
       }
       setActionMessage(
-        `Exclusão solicitada. Você pode cancelar nos próximos ${DELETION_GRACE_DAYS} dias.`,
+        t("profile.deletionRequested", { days: DELETION_GRACE_DAYS }),
       );
       await refreshUser();
       setPending(false);
     } catch {
-      setActionError("Não foi possível solicitar a exclusão.");
+      setActionError(t("profile.deletionError"));
       setPending(false);
     }
   }
@@ -153,15 +155,15 @@ export function AccountSettingsPanel({
       });
       const data = (await response.json()) as { error?: string };
       if (!response.ok) {
-        setActionError(data.error ?? "Falha ao cancelar exclusão.");
+        setActionError(te(data.error) ?? t("profile.cancelFailed"));
         setPending(false);
         return;
       }
-      setActionMessage("Conta reativada.");
+      setActionMessage(t("profile.reactivated"));
       await refreshUser();
       setPending(false);
     } catch {
-      setActionError("Não foi possível cancelar a exclusão.");
+      setActionError(t("profile.cancelError"));
       setPending(false);
     }
   }
@@ -175,7 +177,7 @@ export function AccountSettingsPanel({
         router.refresh();
       });
     } catch {
-      setActionError("Não foi possível sair.");
+      setActionError(t("profile.logoutError"));
       setPending(false);
     }
   }
@@ -185,56 +187,55 @@ export function AccountSettingsPanel({
   return (
     <Stack gap="xl" maw={520}>
       <div>
-        <Title order={2}>Configurações da conta</Title>
+        <Title order={2}>{t("profile.title")}</Title>
         <Text c="dimmed" size="sm" mt={4}>
-          Identidade, username e exclusão.
+          {t("profile.subtitle")}
         </Text>
       </div>
 
       {actionError ? (
-        <Alert color="red" title="Erro" variant="light">
+        <Alert color="red" title={t("common.error")} variant="light">
           {actionError}
         </Alert>
       ) : null}
       {actionMessage ? (
-        <Alert color="teal" title="Ok" variant="light">
+        <Alert color="teal" title={t("profile.ok")} variant="light">
           {actionMessage}
         </Alert>
       ) : null}
 
       {deletionPending ? (
-        <Alert color="orange" title="Exclusão pendente" variant="light">
-          Seu perfil público está indisponível. O username permanece reservado.
-          Você pode cancelar a exclusão e reativar a conta.
+        <Alert color="orange" title={t("profile.deletionPending")} variant="light">
+          {t("profile.deletionPendingText")}
         </Alert>
       ) : null}
 
       <Stack gap="xs">
         <Text size="sm" c="dimmed">
-          E-mail
+          {t("auth.email")}
         </Text>
         <Text fw={600}>{user.email}</Text>
         <Text size="sm" c="dimmed" mt="sm">
-          Status
+          {t("common.status")}
         </Text>
-        <Text fw={600}>{user.accountStatus}</Text>
+        <Text fw={600}>{tEnum("accountStatus", user.accountStatus)}</Text>
       </Stack>
 
       <Divider />
 
       <form onSubmit={onSaveProfile}>
         <Stack gap="md">
-          <Title order={4}>Perfil público</Title>
+          <Title order={4}>{t("profile.publicProfile")}</Title>
           <TextInput
-            label="Nome de exibição"
-            description="Pode ser alterado livremente; não muda a URL."
+            label={t("auth.displayName")}
+            description={t("profile.displayNameHint")}
             value={displayName}
             maxLength={60}
             required
             onChange={(event) => setDisplayName(event.currentTarget.value)}
           />
           <Textarea
-            label="Bio"
+            label={t("profile.bio")}
             value={bio}
             maxLength={500}
             autosize
@@ -242,18 +243,18 @@ export function AccountSettingsPanel({
             onChange={(event) => setBio(event.currentTarget.value)}
           />
           <Switch
-            label="Perfil público habilitado"
-            description="Mostra apenas cartas disponíveis para troca (acima da reserva competitiva)."
+            label={t("profile.publicEnabled")}
+            description={t("profile.publicHint")}
             checked={isPublic}
             onChange={(event) => setIsPublic(event.currentTarget.checked)}
           />
           <Group>
             <Button type="submit" variant="light" loading={pending}>
-              Salvar perfil
+              {t("profile.saveProfile")}
             </Button>
             {user.isPublic && !deletionPending ? (
               <Anchor component={Link} href={`/user/${user.username}`} size="sm">
-                Ver /user/{user.username}
+                {t("profile.view", { username: user.username })}
               </Anchor>
             ) : null}
           </Group>
@@ -265,8 +266,8 @@ export function AccountSettingsPanel({
       <form onSubmit={onChangeUsername}>
         <Stack gap="md">
           <TextInput
-            label="Username"
-            description="Alteração limitada a uma vez a cada 3 meses"
+            label={t("auth.username")}
+            description={t("profile.usernameHint")}
             value={username}
             disabled={deletionPending || pending}
             onChange={(event) => setUsername(event.currentTarget.value)}
@@ -278,7 +279,7 @@ export function AccountSettingsPanel({
               disabled={deletionPending}
               loading={pending}
             >
-              Salvar username
+              {t("profile.saveUsername")}
             </Button>
           </Group>
         </Stack>
@@ -287,25 +288,23 @@ export function AccountSettingsPanel({
       <Divider />
 
       <Stack gap="sm">
-        <Title order={4}>Sessão</Title>
+        <Title order={4}>{t("profile.session")}</Title>
         <Button
           variant="default"
           onClick={onLogout}
           loading={pending}
           w="fit-content"
         >
-          Sair
+          {t("profile.signOut")}
         </Button>
       </Stack>
 
       <Divider />
 
       <Stack gap="sm">
-        <Title order={4}>Exclusão de conta</Title>
+        <Title order={4}>{t("profile.deletion")}</Title>
         <Text size="sm" c="dimmed">
-          A exclusão não é imediata. Durante o período de recuperação (
-          {DELETION_GRACE_DAYS} dias sugeridos), a conta fica em
-          DELETION_PENDING e pode ser reativada.
+          {t("profile.deletionText", { days: DELETION_GRACE_DAYS })}
         </Text>
         {deletionPending ? (
           <Button
@@ -315,7 +314,7 @@ export function AccountSettingsPanel({
             loading={pending}
             w="fit-content"
           >
-            Cancelar exclusão
+            {t("profile.cancelDeletion")}
           </Button>
         ) : (
           <Button
@@ -325,7 +324,7 @@ export function AccountSettingsPanel({
             loading={pending}
             w="fit-content"
           >
-            Solicitar exclusão
+            {t("profile.requestDeletion")}
           </Button>
         )}
       </Stack>

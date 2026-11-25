@@ -64,11 +64,11 @@ export function LanguageFlag({
 export function LanguageSelect({
   value,
   onChange,
-  label = "Idioma",
+  label,
 }: {
   value: string;
   onChange: (code: string) => void;
-  label?: string;
+  label: string;
 }) {
   return (
     <Select
