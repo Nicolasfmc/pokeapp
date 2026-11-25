@@ -59,7 +59,7 @@ function formatDate(value: string | null) {
   if (!value) return "—";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleString("pt-BR");
+  return date.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
 }
 
 export function TrainingPanel({

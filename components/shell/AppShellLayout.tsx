@@ -1,23 +1,31 @@
 "use client";
 
 import Link from "next/link";
-import { AppShell, Burger, Button, Group, Text, useMantineColorScheme } from "@mantine/core";
+import { AppShell, Box, Burger, Button, Group, Text, useMantineColorScheme } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { AppNav } from "@/components/shell/AppNav";
 
+// Labels must not depend on the color scheme during render: the server always
+// renders light, so a dark user would get a hydration mismatch (which forces a
+// client re-render and leaves duplicated Mantine styles, e.g. a stuck navbar).
+// Both labels are rendered and CSS (lightHidden/darkHidden) shows the right one.
 function ColorSchemeToggle() {
-  const { colorScheme, setColorScheme } = useMantineColorScheme();
-  const next = colorScheme === "dark" ? "light" : "dark";
+  const { toggleColorScheme } = useMantineColorScheme();
 
   return (
     <Button
       variant="subtle"
       color="ink"
       size="compact-sm"
-      aria-label={next === "dark" ? "Ativar tema escuro" : "Ativar tema claro"}
-      onClick={() => setColorScheme(next)}
+      aria-label="Alternar tema claro/escuro"
+      onClick={toggleColorScheme}
     >
-      {colorScheme === "dark" ? "Tema claro" : "Tema escuro"}
+      <Box component="span" lightHidden>
+        Tema claro
+      </Box>
+      <Box component="span" darkHidden>
+        Tema escuro
+      </Box>
     </Button>
   );
 }
