@@ -10,7 +10,6 @@ import {
   Button,
   Checkbox,
   Group,
-  NumberInput,
   Select,
   Stack,
   Text,
@@ -72,15 +71,11 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
   const [description, setDescription] = useState(initialDeck.description ?? "");
   const [tags, setTags] = useState<string[]>(initialDeck.tags);
   const [cards, setCards] = useState<EditableCard[]>(initialDeck.cards);
-  const [setCode, setSetCode] = useState("");
-  const [collectorNumber, setCollectorNumber] = useState("");
-  const [addQuantity, setAddQuantity] = useState<number | string>(1);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [validation, setValidation] = useState<ValidationPayload | null>(null);
   const [metaPending, setMetaPending] = useState(false);
   const [cardsPending, setCardsPending] = useState(false);
-  const [resolvePending, setResolvePending] = useState(false);
   const [validatePending, setValidatePending] = useState(false);
   const [coverOpen, setCoverOpen] = useState(false);
 
@@ -270,61 +265,6 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
     }
   }
 
-  async function onAddByPrinting(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-    setMessage(null);
-    setResolvePending(true);
-    try {
-      const quantity =
-        typeof addQuantity === "number" ? addQuantity : Number(addQuantity);
-      const response = await fetch("/api/decks/resolve", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          setCode,
-          collectorNumber,
-          quantity,
-        }),
-      });
-      const data = (await response.json()) as {
-        card?: {
-          quantity: number;
-          logicalCardId: string;
-          canonicalName: string;
-          category: EditableCard["category"];
-          printingId: string;
-          imageUrl: string | null;
-        };
-        error?: string;
-      };
-      if (!response.ok || !data.card) {
-        setError(data.error ?? "Carta não encontrada.");
-        setResolvePending(false);
-        return;
-      }
-
-      addCopies(
-        {
-          logicalCardId: data.card.logicalCardId,
-          canonicalName: data.card.canonicalName,
-          category: data.card.category,
-          printingId: data.card.printingId,
-          imageUrl: data.card.imageUrl,
-        },
-        data.card.quantity,
-      );
-      setSetCode("");
-      setCollectorNumber("");
-      setAddQuantity(1);
-      setMessage(`Adicionada: ${data.card.canonicalName}`);
-      setResolvePending(false);
-    } catch {
-      setError("Não foi possível resolver a carta.");
-      setResolvePending(false);
-    }
-  }
-
   return (
     <Stack gap="lg" className="max-w-6xl animate-[sb-rise_0.45s_ease-out]">
       <DeckCoverPicker
@@ -492,47 +432,6 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
             }}
           />
 
-          <form onSubmit={onAddByPrinting}>
-            <Group
-              align="flex-end"
-              gap="sm"
-              className="rounded-xl border border-[var(--sb-line)] bg-[var(--sb-panel)]/85 p-4"
-              wrap="wrap"
-            >
-              <TextInput
-                label="Set"
-                placeholder="TWM"
-                value={setCode}
-                onChange={(e) => setSetCode(e.currentTarget.value)}
-                style={{ width: 100 }}
-                required
-              />
-              <TextInput
-                label="Collector"
-                placeholder="128"
-                value={collectorNumber}
-                onChange={(e) => setCollectorNumber(e.currentTarget.value)}
-                style={{ width: 110 }}
-                required
-              />
-              <NumberInput
-                label="Qtd"
-                min={1}
-                max={99}
-                value={addQuantity}
-                onChange={setAddQuantity}
-                style={{ width: 90 }}
-              />
-              <Button type="submit" loading={resolvePending}>
-                Adicionar
-              </Button>
-              <Text size="xs" c="dimmed" w="100%">
-                Adicionar pela impressão (set + número de coleção, como no
-                Limitless).
-              </Text>
-            </Group>
-          </form>
-
           {grouped.length === 0 ? (
             <Stack
               gap="xs"
@@ -540,7 +439,7 @@ export function DeckEditorPanel({ initialDeck }: { initialDeck: DeckDto }) {
             >
               <Text fw={600}>Lista vazia</Text>
               <Text size="sm" c="dimmed">
-                Adicione cartas por set/collector ou importe uma lista Limitless.
+                Busque cartas acima e clique na imagem para adicionar, ou importe uma lista Limitless.
               </Text>
               <Button
                 component={Link}

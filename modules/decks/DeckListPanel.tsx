@@ -13,7 +13,7 @@ import {
 } from "@mantine/core";
 import type { DeckDto } from "./types";
 import { DeckCoverPicker } from "./DeckCoverPicker";
-import { CardArt } from "@/modules/cards/ui/CardImage";
+import { CardArt, CardImage } from "@/modules/cards/ui/CardImage";
 
 const TAG_LABELS: Record<string, string> = {
   FAVORITE: "Favorito",
@@ -125,9 +125,18 @@ export function DeckListPanel({ initialDecks }: { initialDecks: DeckDto[] }) {
               <Link
                 href={`/decks/${deck.id}`}
                 aria-label={`Abrir ${deck.name}`}
-                className="block w-28 shrink-0 self-start sm:w-auto sm:self-auto"
+                className="my-2 ml-2 block w-28 shrink-0 self-start sm:m-0 sm:w-auto sm:self-auto"
               >
-                <CardArt src={deck.coverImageUrl} alt={`Capa de ${deck.name}`} />
+                <div className="sm:hidden">
+                  <CardImage
+                    src={deck.coverImageUrl}
+                    alt={`Capa de ${deck.name}`}
+                    sizes="112px"
+                  />
+                </div>
+                <div className="hidden sm:block">
+                  <CardArt src={deck.coverImageUrl} alt={`Capa de ${deck.name}`} />
+                </div>
               </Link>
               <Stack gap={6} p="sm" style={{ flex: 1, minWidth: 0 }}>
                 <Text
