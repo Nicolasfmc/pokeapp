@@ -598,7 +598,7 @@ export function InventoryPanel({
                             {tx.note ? ` — ${tx.note}` : ""}
                           </span>
                           <span className="shrink-0 text-[color-mix(in_srgb,var(--sb-ink)_55%,transparent)]">
-                            {new Date(tx.createdAt).toLocaleString("pt-BR")}
+                            {new Date(tx.createdAt).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}
                           </span>
                         </div>
                       ))
