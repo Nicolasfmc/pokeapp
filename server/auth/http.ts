@@ -1,3 +1,4 @@
+import { readJsonObject } from "@/server/http-body";
 import { NextResponse } from "next/server";
 import { AuthServiceError } from "./service";
 import { UnauthorizedError } from "./get-session";
@@ -27,9 +28,9 @@ export function handleAuthError(error: unknown) {
 export async function readJsonBody<T extends Record<string, unknown>>(
   request: Request,
 ): Promise<T> {
-  try {
-    return (await request.json()) as T;
-  } catch {
-    throw new AuthServiceError("JSON inválido.", 400, "INVALID_JSON");
+  const body = await readJsonObject(request);
+  if (!body.ok) {
+    throw new AuthServiceError(body.message, body.status, body.code);
   }
+  return body.value as T;
 }

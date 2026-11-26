@@ -1,23 +1,14 @@
-import {
-  clearSessionCookie,
-  decryptSession,
-  readSessionToken,
-} from "./session";
+import { readAccessToken } from "./session";
+import { verifyAccessToken } from "./tokens";
 import type { SessionUser } from "./types";
 
+/**
+ * Current user from the access token. The proxy refreshes an expired access
+ * token from the session cookie before the request reaches the app, so an
+ * invalid or missing token here means "not signed in".
+ */
 export async function getSession(): Promise<SessionUser | null> {
-  const token = await readSessionToken();
-  if (!token) {
-    return null;
-  }
-
-  const session = await decryptSession(token);
-  if (!session) {
-    await clearSessionCookie();
-    return null;
-  }
-
-  return session;
+  return verifyAccessToken(await readAccessToken());
 }
 
 export class UnauthorizedError extends Error {

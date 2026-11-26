@@ -1,70 +1,57 @@
-import { SignJWT, jwtVerify } from "jose";
-import { cookies } from "next/headers";
+/**
+ * Cookie helpers for route handlers and server actions (they use
+ * `next/headers`). Server components may only read cookies.
+ */
+import { cookies, headers } from "next/headers";
 import {
-  SESSION_COOKIE_NAME,
-  SESSION_MAX_AGE_SECONDS,
+  ACCESS_COOKIE_NAME,
+  ACCESS_TOKEN_TTL_SECONDS,
+  LEGACY_SESSION_COOKIE_NAME,
+  REFRESH_COOKIE_NAME,
 } from "./constants";
-import type { SessionUser } from "./types";
+import { createUserSession, pruneOldSessions, revokeSessionByRefreshToken } from "./sessions";
+import { authCookieOptions, signAccessToken } from "./tokens";
+import { clientIpFromHeaders } from "@/server/request-info";
 
-function getSecretKey() {
-  const secret = process.env.AUTH_SECRET;
-  if (!secret || secret.length < 16) {
-    throw new Error("AUTH_SECRET ausente ou muito curto");
+export async function startSession(
+  user: { id: string; username: string },
+  rememberMe: boolean,
+): Promise<string> {
+  const headerStore = await headers();
+  const issued = await createUserSession({
+    user,
+    rememberMe,
+    userAgent: headerStore.get("user-agent"),
+    ipAddress: clientIpFromHeaders(headerStore),
+  });
+  const cookieStore = await cookies();
+  cookieStore.set(ACCESS_COOKIE_NAME, issued.accessToken, authCookieOptions(ACCESS_TOKEN_TTL_SECONDS));
+  cookieStore.set(REFRESH_COOKIE_NAME, issued.refreshToken, authCookieOptions(issued.maxAgeSeconds));
+  cookieStore.delete(LEGACY_SESSION_COOKIE_NAME);
+  // Housekeeping on sign-in keeps the table small without a cron job.
+  if (Math.random() < 0.05) {
+    await pruneOldSessions().catch((error) => console.error("pruneOldSessions", error));
   }
-  return new TextEncoder().encode(secret);
+  return issued.sessionId;
 }
 
-export async function encryptSession(user: SessionUser): Promise<string> {
-  return new SignJWT({ id: user.id, username: user.username })
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime(`${SESSION_MAX_AGE_SECONDS}s`)
-    .sign(getSecretKey());
-}
-
-export async function decryptSession(
-  token: string,
-): Promise<SessionUser | null> {
-  try {
-    const { payload } = await jwtVerify(token, getSecretKey(), {
-      algorithms: ["HS256"],
-    });
-
-    if (
-      typeof payload.id !== "string" ||
-      typeof payload.username !== "string"
-    ) {
-      return null;
-    }
-
-    return { id: payload.id, username: payload.username };
-  } catch {
-    return null;
-  }
-}
-
-export function sessionCookieOptions(maxAge = SESSION_MAX_AGE_SECONDS) {
-  return {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax" as const,
-    path: "/",
-    maxAge,
-  };
-}
-
-export async function setSessionCookie(user: SessionUser): Promise<void> {
-  const token = await encryptSession(user);
+/** Replaces the access token (e.g. after a username change) for the same session. */
+export async function reissueAccessToken(user: { id: string; username: string; sessionId: string }) {
+  const token = await signAccessToken(user);
   const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE_NAME, token, sessionCookieOptions());
+  cookieStore.set(ACCESS_COOKIE_NAME, token, authCookieOptions(ACCESS_TOKEN_TTL_SECONDS));
 }
 
-export async function clearSessionCookie(): Promise<void> {
+/** Revokes the current session in the database and clears every auth cookie. */
+export async function endSession(): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE_NAME, "", sessionCookieOptions(0));
+  await revokeSessionByRefreshToken(cookieStore.get(REFRESH_COOKIE_NAME)?.value);
+  cookieStore.delete(ACCESS_COOKIE_NAME);
+  cookieStore.delete(REFRESH_COOKIE_NAME);
+  cookieStore.delete(LEGACY_SESSION_COOKIE_NAME);
 }
 
-export async function readSessionToken(): Promise<string | undefined> {
+export async function readAccessToken(): Promise<string | undefined> {
   const cookieStore = await cookies();
-  return cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  return cookieStore.get(ACCESS_COOKIE_NAME)?.value;
 }

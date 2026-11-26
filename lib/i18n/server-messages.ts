@@ -31,6 +31,9 @@ const EXACT: Record<string, string> = {
   "E-mail inválido.": "Invalid email.",
   "E-mail já cadastrado.": "Email already registered.",
   "Erro interno.": "Internal error.",
+  "Requisição grande demais.": "Request too large.",
+  "Origem não permitida.": "Origin not allowed.",
+  "A senha deve ter no máximo 128 caracteres.": "Password must have at most 128 characters.",
   "Exclusão já solicitada.": "Deletion already requested.",
   "Falha ao atualizar arquétipo.": "Failed to update archetype.",
   "Falha ao criar arquétipo.": "Failed to create archetype.",
@@ -119,6 +122,10 @@ const PATTERNS: Pattern[] = [
   [
     /^A senha deve ter pelo menos (\d+) caracteres\.$/,
     (n) => `Password must have at least ${n} characters.`,
+  ],
+  [
+    /^A senha deve ter no máximo (\d+) caracteres\.$/,
+    (n) => `Password must have at most ${n} characters.`,
   ],
   [
     /^Username só pode ser alterado a cada 3 meses\. Aguarde cerca de (\d+) dia\(s\)\.$/,

@@ -25,4 +25,9 @@ export const auth = defineMessages({
   "auth.displayNameHint": ["Optional; separate from the username", "Opcional; independente do username"],
   "auth.passwordHint": ["At least 8 characters", "Mínimo de 8 caracteres"],
   "auth.haveAccount": ["Already have an account?", "Já tem conta?"],
+  "auth.rememberMe": ["Keep me signed in", "Manter-se conectado"],
+  "auth.rememberMeHint": [
+    "Stay signed in for 7 days on this device (otherwise 1 day).",
+    "Fica conectado por 7 dias neste dispositivo (senão, 1 dia).",
+  ],
 });

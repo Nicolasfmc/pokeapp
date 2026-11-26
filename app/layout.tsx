@@ -7,6 +7,7 @@ import {
 import { AppProviders } from "@/components/providers/AppProviders";
 import "./globals.css";
 import { getTranslator } from "@/lib/i18n/server";
+import { headers } from "next/headers";
 
 const display = Space_Grotesk({
   variable: "--font-space-grotesk",
@@ -39,6 +40,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const { locale, t } = await getTranslator();
+  // Set by proxy.ts; lets Mantine's inline color-scheme script pass the CSP.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     <html
       lang={locale}
@@ -46,7 +49,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className={`${display.variable} ${body.variable} ${mono.variable} h-full antialiased`}
     >
       <head>
-        <ColorSchemeScript defaultColorScheme="light" />
+        <ColorSchemeScript defaultColorScheme="light" nonce={nonce} />
       </head>
       <body className="min-h-full flex flex-col">
         <AppProviders locale={locale}>{children}</AppProviders>

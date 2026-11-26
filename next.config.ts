@@ -1,7 +1,12 @@
 import type { NextConfig } from "next";
 import packageJson from "./package.json";
+import { STATIC_SECURITY_HEADERS } from "./server/security";
 
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
+  async headers() {
+    return [{ source: "/:path*", headers: STATIC_SECURITY_HEADERS }];
+  },
   // Versão exibida no rodapé (fonte única: package.json).
   env: {
     NEXT_PUBLIC_APP_VERSION: packageJson.version,

@@ -79,6 +79,8 @@ model User {
   username            String        @unique
   passwordHash        String
   accountStatus       AccountStatus @default(ACTIVE)
+  /// Grants access to the separate admin app. Set only directly in the database.
+  isAdmin             Boolean       @default(false)
   usernameChangedAt   DateTime?
   deletionRequestedAt DateTime?
   createdAt           DateTime      @default(now())
@@ -92,6 +94,7 @@ model User {
   matches               Match[]
   tournaments           Tournament[]
   auditLogs             AuditLog[]
+  sessions              UserSession[]
 
   @@index([username])
   @@index([accountStatus])
@@ -444,4 +447,36 @@ model AuditLog {
   @@index([entity, entityId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+/// Login session. The refresh token lives in an httpOnly cookie and only its
+/// SHA-256 hash is stored, so a database leak doesn't expose usable tokens.
+/// Revoking a session (logout) stops new access tokens from being issued.
+model UserSession {
+  id               String    @id @default(cuid())
+  userId           String
+  refreshTokenHash String    @unique
+  rememberMe       Boolean   @default(false)
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  lastUsedAt       DateTime  @default(now())
+  userAgent        String?
+  ipAddress        String?
+  createdAt        DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("user_sessions")
+}
+
+/// Fixed-window rate limit counters shared by every server instance.
+model AuthRateLimit {
+  key         String   @id
+  count       Int
+  windowStart DateTime
+
+  @@index([windowStart])
+  @@map("auth_rate_limits")
 }
