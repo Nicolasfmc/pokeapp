@@ -1,9 +1,16 @@
 import { prisma } from "@/server/database";
 import { writeAuditLog } from "@/server/audit";
 import { AccountStatus, Prisma } from "@prisma/client";
-import { USERNAME_CHANGE_COOLDOWN_MS } from "./constants";
-import { hashPassword, validatePassword, verifyPassword } from "./password";
-import { setSessionCookie, clearSessionCookie } from "./session";
+import { PASSWORD_MAX_LENGTH, USERNAME_CHANGE_COOLDOWN_MS } from "./constants";
+import { hashPassword, validatePassword, verifyPassword, verifyAgainstDummyHash } from "./password";
+import { endSession, reissueAccessToken, startSession } from "./session";
+import { revokeUserSessions } from "./sessions";
+import {
+  LOGIN_FAILURE_LIMIT,
+  consumeRateLimit,
+  peekRateLimit,
+  resetRateLimit,
+} from "./rate-limit-db";
 import type { SessionUser } from "./types";
 import {
   normalizeEmail,
@@ -24,9 +31,17 @@ export class AuthServiceError extends Error {
   }
 }
 
-function toSessionUser(user: { id: string; username: string }): SessionUser {
-  return { id: user.id, username: user.username };
+export class RateLimitedError extends AuthServiceError {
+  readonly retryAfterSec: number;
+
+  constructor(retryAfterSec: number) {
+    super("Muitas requisições. Tente novamente em breve.", 429, "RATE_LIMITED");
+    this.name = "RateLimitedError";
+    this.retryAfterSec = retryAfterSec;
+  }
 }
+
+const loginFailureKey = (email: string) => `login:fail:${email}`;
 
 async function writeAudit(
   userId: string | null,
@@ -87,10 +102,9 @@ export async function registerUser(input: {
       select: { id: true, username: true },
     });
 
-    const session = toSessionUser(user);
-    await setSessionCookie(session);
+    const sessionId = await startSession(user, false);
     await writeAudit(user.id, "USER_REGISTERED", user.id, { username });
-    return session;
+    return { id: user.id, username: user.username, sessionId };
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -123,13 +137,18 @@ export async function registerUser(input: {
 export async function loginUser(input: {
   email: string;
   password: string;
+  rememberMe?: boolean;
 }): Promise<SessionUser> {
   const emailError = validateEmail(input.email);
   if (emailError) {
     throw new AuthServiceError(emailError, 400, "INVALID_EMAIL");
   }
 
-  if (typeof input.password !== "string" || input.password.length === 0) {
+  if (
+    typeof input.password !== "string" ||
+    input.password.length === 0 ||
+    input.password.length > PASSWORD_MAX_LENGTH
+  ) {
     throw new AuthServiceError(
       "Credenciais inválidas.",
       401,
@@ -138,6 +157,15 @@ export async function loginUser(input: {
   }
 
   const email = normalizeEmail(input.email);
+
+  // Too many failed attempts for this account: refuse before checking the
+  // password, so guessing can't continue from many IPs.
+  const throttle = await peekRateLimit(loginFailureKey(email), LOGIN_FAILURE_LIMIT);
+  if (!throttle.ok) {
+    await writeAudit(null, "LOGIN_THROTTLED", email);
+    throw new RateLimitedError(throttle.retryAfterSec);
+  }
+  const recordFailure = () => consumeRateLimit(loginFailureKey(email), LOGIN_FAILURE_LIMIT);
 
   const user = await prisma.user.findUnique({
     where: { email },
@@ -150,6 +178,10 @@ export async function loginUser(input: {
   });
 
   if (!user) {
+    // Same bcrypt cost as a real check, so response time doesn't reveal
+    // whether the email is registered.
+    await verifyAgainstDummyHash(input.password);
+    await recordFailure();
     await writeAudit(null, "LOGIN_FAILED", email, { reason: "UNKNOWN_EMAIL" });
     throw new AuthServiceError(
       "Credenciais inválidas.",
@@ -171,6 +203,7 @@ export async function loginUser(input: {
 
   const valid = await verifyPassword(input.password, user.passwordHash);
   if (!valid) {
+    await recordFailure();
     await writeAudit(user.id, "LOGIN_FAILED", user.id, {
       reason: "BAD_PASSWORD",
     });
@@ -181,13 +214,14 @@ export async function loginUser(input: {
     );
   }
 
-  const session = toSessionUser(user);
-  await setSessionCookie(session);
-  return session;
+  await resetRateLimit(loginFailureKey(email));
+  const sessionId = await startSession(user, Boolean(input.rememberMe));
+  await writeAudit(user.id, "LOGIN_SUCCEEDED", user.id, { rememberMe: Boolean(input.rememberMe) });
+  return { id: user.id, username: user.username, sessionId };
 }
 
 export async function logoutUser(): Promise<void> {
-  await clearSessionCookie();
+  await endSession();
 }
 
 export async function getAuthMe(session: SessionUser) {
@@ -211,7 +245,9 @@ export async function getAuthMe(session: SessionUser) {
   });
 
   if (!user || user.accountStatus === AccountStatus.PERMANENTLY_DELETED) {
-    await clearSessionCookie();
+    // Server components can't change cookies: revoke in the database so the
+    // proxy stops refreshing the access token.
+    await revokeUserSessions(session.id);
     throw new AuthServiceError("Sessão inválida.", 401, "INVALID_SESSION");
   }
 
@@ -340,6 +376,8 @@ export async function requestAccountDeletion(
     },
   });
 
+  // Sign out every other device; this one stays so the user can cancel.
+  await revokeUserSessions(session.id, session.sessionId);
   await writeAudit(session.id, "ACCOUNT_DELETION_REQUESTED", session.id);
 
   return {
@@ -447,8 +485,8 @@ export async function changeUsername(
       select: { id: true, username: true },
     });
 
-    const nextSession = toSessionUser(updated);
-    await setSessionCookie(nextSession);
+    const nextSession = { id: updated.id, username: updated.username, sessionId: session.sessionId };
+    await reissueAccessToken(nextSession);
     await writeAudit(session.id, "USERNAME_CHANGED", session.id, {
       from: user.username,
       to: nextUsername,

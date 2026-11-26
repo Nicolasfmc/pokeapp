@@ -6,6 +6,7 @@ import { FormEvent, useState, startTransition } from "react";
 import {
   Alert,
   Button,
+  Checkbox,
   PasswordInput,
   Stack,
   Text,
@@ -13,14 +14,16 @@ import {
   Title,
 } from "@mantine/core";
 import { useI18n } from "@/lib/i18n/I18nProvider";
+import { safeRedirectPath } from "@/server/security";
 
 export function LoginForm() {
   const router = useRouter();
   const { t, te } = useI18n();
   const searchParams = useSearchParams();
-  const nextPath = searchParams.get("next") || "/";
+  const nextPath = safeRedirectPath(searchParams.get("next"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -33,7 +36,7 @@ export function LoginForm() {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, rememberMe }),
       });
 
       const data = (await response.json()) as { error?: string };
@@ -45,7 +48,7 @@ export function LoginForm() {
       }
 
       startTransition(() => {
-        router.replace(nextPath.startsWith("/") ? nextPath : "/");
+        router.replace(nextPath);
         router.refresh();
       });
     } catch {
@@ -88,6 +91,13 @@ export function LoginForm() {
             required
             value={password}
             onChange={(event) => setPassword(event.currentTarget.value)}
+          />
+
+          <Checkbox
+            label={t("auth.rememberMe")}
+            description={t("auth.rememberMeHint")}
+            checked={rememberMe}
+            onChange={(event) => setRememberMe(event.currentTarget.checked)}
           />
 
           <Button type="submit" loading={pending} fullWidth>

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { clientIp } from "@/server/request-info";
 
 type Bucket = {
   count: number;
@@ -22,14 +23,6 @@ export const PUBLIC_RATE_LIMIT: RateLimitOptions = {
   windowMs: 60_000,
 };
 
-function clientIp(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) {
-    const first = forwarded.split(",")[0]?.trim();
-    if (first) return first;
-  }
-  return request.headers.get("x-real-ip")?.trim() || "unknown";
-}
 
 export function checkRateLimit(
   key: string,

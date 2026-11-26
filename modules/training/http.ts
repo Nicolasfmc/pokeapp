@@ -1,3 +1,4 @@
+import { readJsonObject } from "@/server/http-body";
 import { NextResponse } from "next/server";
 import { UnauthorizedError } from "@/server/auth";
 import { MatchServiceError } from "@/server/services/match";
@@ -27,9 +28,9 @@ export function handleTrainingError(error: unknown) {
 export async function readJsonBody<T extends Record<string, unknown>>(
   request: Request,
 ): Promise<T> {
-  try {
-    return (await request.json()) as T;
-  } catch {
-    throw new MatchServiceError("JSON inválido.", 400, "INVALID_JSON");
+  const body = await readJsonObject(request);
+  if (!body.ok) {
+    throw new MatchServiceError(body.message, body.status, body.code);
   }
+  return body.value as T;
 }
