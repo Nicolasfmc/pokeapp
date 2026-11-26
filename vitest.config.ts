@@ -11,5 +11,7 @@ export default defineConfig({
     // Testes de integração (tests/integration) usam o PostgreSQL de DATABASE_URL
     // e só rodam com RUN_DB_TESTS=1 (ver README).
     fileParallelism: false,
+    // admin/ is a separate app with its own tests.
+    exclude: ["**/node_modules/**", "admin/**"],
   },
 });
