@@ -41,6 +41,7 @@ describe("CSRF guard", () => {
       ),
     ).toBe(false);
     expect(isCrossSiteMutation(req("PATCH", {}))).toBe(false);
+    expect(isCrossSiteMutation(req("POST", { origin: "null", "sec-fetch-site": "same-origin" }))).toBe(false);
   });
 });
 

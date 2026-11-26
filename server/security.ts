@@ -60,8 +60,10 @@ type RequestLike = {
 export function isCrossSiteMutation(request: RequestLike): boolean {
   if (SAFE_METHODS.has(request.method.toUpperCase())) return false;
 
+  // Sec-Fetch-Site is set by the browser and can't be forged by pages; when
+  // present it decides (Origin can be "null" under strict referrer policies).
   const fetchSite = request.headers.get("sec-fetch-site");
-  if (fetchSite && fetchSite !== "same-origin" && fetchSite !== "none") return true;
+  if (fetchSite) return fetchSite !== "same-origin" && fetchSite !== "none";
 
   const origin = request.headers.get("origin");
   if (!origin) return false;
