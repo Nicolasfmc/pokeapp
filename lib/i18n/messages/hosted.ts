@@ -140,7 +140,13 @@ export const hosted = defineMessages({
     "Waiting for your opponent to confirm.",
     "Aguardando a confirmação do oponente.",
   ],
-  "hosted.opponentReported": ["Your opponent reported: {score}", "Seu oponente reportou: {score}"],
+  // "Your opponent reported that **you lost** (0-2)." — the bold part is colored.
+  "hosted.opponentReportedThat": ["Your opponent reported that", "Seu oponente reportou que"],
+  "hosted.opponentReportedPlain": ["Your opponent reported", "Seu oponente reportou"],
+  "hosted.reported.WIN": ["you won", "você venceu"],
+  "hosted.reported.LOSS": ["you lost", "você perdeu"],
+  "hosted.reported.DRAW": ["a draw", "empate"],
+  "hosted.scoreLegend": ["your games – opponent's", "seus games – do oponente"],
   "hosted.confirm": ["Confirm", "Confirmar"],
   "hosted.dispute": ["Dispute", "Contestar"],
   "hosted.disputedHint": [

@@ -15,6 +15,42 @@ type Props = {
   onAction: (pairingId: string, body: Record<string, unknown>) => Promise<boolean>;
 };
 
+type MyOutcome = "WIN" | "LOSS" | "DRAW";
+
+// outcomeFromGames(myGames, opponentGames) treats the viewer as player 1.
+const OUTCOME_FOR_ME = {
+  PLAYER1_WIN: "WIN",
+  PLAYER2_WIN: "LOSS",
+  DRAW: "DRAW",
+} as const satisfies Record<ReturnType<typeof outcomeFromGames>, MyOutcome>;
+
+const OUTCOME_COLOR: Record<MyOutcome, string> = { WIN: "green", LOSS: "red", DRAW: "gray" };
+
+/** "Your opponent reported that **you lost** (0-2 · your games – opponent's)." */
+function ReportedOutcome({ outcome, score }: { outcome: MyOutcome; score: string | null }) {
+  const { t } = useI18n();
+  return (
+    <Text size="sm">
+      {outcome === "DRAW" ? t("hosted.opponentReportedPlain") : t("hosted.opponentReportedThat")}{" "}
+      <Text span fw={700} c={OUTCOME_COLOR[outcome]}>
+        {t(`hosted.reported.${outcome}`)}
+      </Text>
+      {score ? (
+        <>
+          {" "}
+          (<span className="font-[family-name:var(--font-ibm-plex-mono)] font-semibold">{score}</span>
+          <Text span size="xs" c="dimmed">
+            {" · "}
+            {t("hosted.scoreLegend")}
+          </Text>
+          )
+        </>
+      ) : null}
+      .
+    </Text>
+  );
+}
+
 /** The viewer's own match in the current round: report, confirm or dispute. */
 export function MyMatchPanel({ pairing, viewerEntryId, bestOf, onAction }: Props) {
   const { t } = useI18n();
@@ -41,6 +77,9 @@ export function MyMatchPanel({ pairing, viewerEntryId, bestOf, onAction }: Props
         player2Games: pairing.player1Games,
         drawGames: pairing.drawGames,
       });
+  const myGames = iAmPlayer1 ? pairing.player1Games : pairing.player2Games;
+  const opponentGames = iAmPlayer1 ? pairing.player2Games : pairing.player1Games;
+  const myOutcome = OUTCOME_FOR_ME[outcomeFromGames(myGames, opponentGames)];
 
   async function respond(action: "confirm" | "dispute") {
     setBusy(action);
@@ -73,7 +112,10 @@ export function MyMatchPanel({ pairing, viewerEntryId, bestOf, onAction }: Props
         {pairing.canConfirm ? (
           <Alert color="yellow" variant="light">
             <Stack gap="xs">
-              <Text size="sm">{t("hosted.opponentReported", { score: myScore })}</Text>
+              <ReportedOutcome
+                outcome={myOutcome}
+                score={bestOf > 1 ? myScore : null}
+              />
               <Group gap="xs">
                 <Button size="xs" color="teal" loading={busy === "confirm"} disabled={busy !== null} onClick={() => void respond("confirm")}>
                   {t("hosted.confirm")}
