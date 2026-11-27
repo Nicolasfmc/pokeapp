@@ -93,6 +93,8 @@ model User {
   battleLogs            BattleLog[]
   matches               Match[]
   tournaments           Tournament[]
+  hostedTournaments     HostedTournament[]
+  hostedEntries         HostedTournamentEntry[]
   auditLogs             AuditLog[]
   sessions              UserSession[]
 
@@ -198,10 +200,11 @@ model Format {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  rules       FormatRule[]
-  decks       Deck[]
-  matches     Match[]
-  tournaments Tournament[]
+  rules             FormatRule[]
+  decks             Deck[]
+  matches           Match[]
+  tournaments       Tournament[]
+  hostedTournaments HostedTournament[]
 
   @@map("formats")
 }
@@ -249,14 +252,15 @@ model Deck {
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
-  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  coverPrinting CardPrinting?    @relation("DeckCover", fields: [coverPrintingId], references: [id], onDelete: SetNull)
-  format        Format           @relation(fields: [formatId], references: [id], onDelete: Restrict)
-  archetype     Archetype?       @relation(fields: [archetypeId], references: [id], onDelete: SetNull)
+  user          User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coverPrinting CardPrinting?           @relation("DeckCover", fields: [coverPrintingId], references: [id], onDelete: SetNull)
+  format        Format                  @relation(fields: [formatId], references: [id], onDelete: Restrict)
+  archetype     Archetype?              @relation(fields: [archetypeId], references: [id], onDelete: SetNull)
   cards         DeckCard[]
   tags          DeckTag[]
   allocations   DeckAllocation[]
   matches       Match[]
+  hostedEntries HostedTournamentEntry[]
 
   @@index([userId])
   @@index([formatId])
@@ -479,4 +483,193 @@ model AuthRateLimit {
 
   @@index([windowStart])
   @@map("auth_rate_limits")
+}
+
+// ---------------------------------------------------------------------------
+// Hosted (organized) tournaments: Swiss rounds run on the platform.
+// ---------------------------------------------------------------------------
+
+enum HostedTournamentStatus {
+  REGISTRATION
+  IN_PROGRESS
+  FINISHED
+}
+
+enum HostedLocationType {
+  IN_PERSON
+  ONLINE
+}
+
+enum HostedDeckPolicy {
+  /// Every player must register a platform deck of the tournament format.
+  REQUIRED
+  /// A deck is optional ("open list").
+  OPTIONAL
+}
+
+enum HostedEntryStatus {
+  ACTIVE
+  DROPPED
+}
+
+enum HostedRoundStatus {
+  IN_PROGRESS
+  FINISHED
+}
+
+enum HostedPairingStatus {
+  /// No result reported yet.
+  PENDING
+  /// One player reported; waiting for the opponent.
+  AWAITING_CONFIRMATION
+  /// Final result (confirmed by both, set by the judge, or a timer draw).
+  CONFIRMED
+  /// Players disagree, or the timer ran out before the confirmation.
+  DISPUTED
+  /// Player 1 has no opponent this round.
+  BYE
+}
+
+enum HostedPairingResult {
+  PLAYER1_WIN
+  PLAYER2_WIN
+  DRAW
+}
+
+enum HostedResultSource {
+  PLAYERS
+  TIMER
+  JUDGE
+  BYE
+}
+
+model HostedTournament {
+  id            String                 @id @default(cuid())
+  /// Unguessable code used in the share link (/t/<code>).
+  code          String                 @unique
+  organizerId   String
+  name          String
+  date          DateTime?
+  locationType  HostedLocationType
+  location      String?
+  formatId      String
+  bestOf        Int
+  pointsWin     Int                    @default(3)
+  pointsDraw    Int                    @default(1)
+  pointsLoss    Int                    @default(0)
+  deckPolicy    HostedDeckPolicy
+  /// Null = suggested from the player count when the tournament starts.
+  plannedRounds Int?
+  roundMinutes  Int
+  maxPlayers    Int?
+  status        HostedTournamentStatus @default(REGISTRATION)
+  currentRound  Int                    @default(0)
+  startedAt     DateTime?
+  finishedAt    DateTime?
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+
+  organizer User                    @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+  format    Format                  @relation(fields: [formatId], references: [id], onDelete: Restrict)
+  entries   HostedTournamentEntry[]
+  rounds    HostedTournamentRound[]
+
+  @@index([organizerId])
+  @@index([status])
+  @@map("hosted_tournaments")
+}
+
+model HostedTournamentEntry {
+  id                String            @id @default(cuid())
+  tournamentId      String
+  userId            String
+  /// Live link to the player's deck; only used until the tournament starts.
+  deckId            String?
+  status            HostedEntryStatus @default(ACTIVE)
+  /// Last round the player was paired in before dropping (0 = before round 1).
+  droppedAfterRound Int?
+  joinedAt          DateTime          @default(now())
+
+  tournament   HostedTournament    @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deck         Deck?               @relation(fields: [deckId], references: [id], onDelete: SetNull)
+  snapshot     HostedDeckSnapshot?
+  pairingsAsP1 HostedPairing[]     @relation("HostedPairingPlayer1")
+  pairingsAsP2 HostedPairing[]     @relation("HostedPairingPlayer2")
+
+  @@unique([tournamentId, userId])
+  @@index([userId])
+  @@index([deckId])
+  @@map("hosted_tournament_entries")
+}
+
+/// Frozen copy of a player's list, taken when the tournament starts. It is
+/// independent from the original deck, which the player may keep editing.
+model HostedDeckSnapshot {
+  id             String   @id @default(cuid())
+  entryId        String   @unique
+  deckName       String
+  archetypeId    String?
+  archetypeName  String?
+  displayPokemon Json?
+  coverImageUrl  String?
+  /// [{ logicalCardId, name, category, quantity, imageUrl }]
+  cards          Json
+  cardCount      Int
+  createdAt      DateTime @default(now())
+
+  entry HostedTournamentEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@map("hosted_deck_snapshots")
+}
+
+model HostedTournamentRound {
+  id               String            @id @default(cuid())
+  tournamentId     String
+  number           Int
+  status           HostedRoundStatus @default(IN_PROGRESS)
+  durationSeconds  Int
+  startedAt        DateTime
+  /// Set while the timer is paused.
+  pausedAt         DateTime?
+  /// Total paused time already accumulated (seconds).
+  pausedSeconds    Int               @default(0)
+  /// When the time-out rules (auto draws / disputes) were applied.
+  timeoutAppliedAt DateTime?
+  finishedAt       DateTime?
+
+  tournament HostedTournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  pairings   HostedPairing[]
+
+  @@unique([tournamentId, number])
+  @@map("hosted_tournament_rounds")
+}
+
+model HostedPairing {
+  id                String               @id @default(cuid())
+  roundId           String
+  /// 1..n/2; null for a bye.
+  tableNumber       Int?
+  player1Id         String
+  player2Id         String?
+  status            HostedPairingStatus  @default(PENDING)
+  result            HostedPairingResult?
+  player1Games      Int                  @default(0)
+  player2Games      Int                  @default(0)
+  drawGames         Int                  @default(0)
+  source            HostedResultSource?
+  reportedByEntryId String?
+  reportedAt        DateTime?
+  confirmedAt       DateTime?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  round   HostedTournamentRound  @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  player1 HostedTournamentEntry  @relation("HostedPairingPlayer1", fields: [player1Id], references: [id], onDelete: Cascade)
+  player2 HostedTournamentEntry? @relation("HostedPairingPlayer2", fields: [player2Id], references: [id], onDelete: Cascade)
+
+  @@index([roundId])
+  @@index([player1Id])
+  @@index([player2Id])
+  @@map("hosted_pairings")
 }
