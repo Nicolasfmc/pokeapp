@@ -3,7 +3,7 @@ import { persistCatalog } from "../../server/tcgdex/sync";
 import type { ExternalCard, ExternalSet } from "../../server/tcgdex/types";
 
 function buildPrismaMock() {
-  const sets = new Map<string, { id: string; tcgdexId: string; isActive: boolean }>();
+  const sets = new Map<string, { id: string; tcgdexId: string; isActive: boolean; releaseDate?: Date | null; standardOverride?: boolean | null }>();
   const logicals = new Map<string, { id: string; canonicalName: string; category: string }>();
   const printings = new Map<
     string,
@@ -21,9 +21,20 @@ function buildPrismaMock() {
           Object.assign(existing, update, { isActive: true });
           return existing;
         }
-        const created = { id: nextId(), tcgdexId: create.tcgdexId, isActive: true };
+        const created = { ...create, id: nextId(), isActive: true };
         sets.set(create.tcgdexId, created);
         return created;
+      }),
+      // Newest set holding a Standard-legal printing (loadStandardReference).
+      findFirst: vi.fn(async ({ where }) => {
+        const excluded: string[] = where?.id?.notIn ?? [];
+        const legalSetIds = new Set(
+          [...printings.values()].filter((p) => p.legalStandardAuto).map((p) => p.setId),
+        );
+        const candidates = [...sets.values()]
+          .filter((set) => legalSetIds.has(set.id) && set.releaseDate && !excluded.includes(set.id))
+          .sort((a, b) => b.releaseDate!.getTime() - a.releaseDate!.getTime());
+        return candidates[0] ? { releaseDate: candidates[0].releaseDate } : null;
       }),
       findMany: vi.fn(async ({ where }) =>
         [...sets.values()].filter((s) => where.isActive === undefined || s.isActive === where.isActive),
@@ -77,6 +88,12 @@ function buildPrismaMock() {
       findMany: vi.fn(async ({ where }) =>
         [...printings.values()].filter((p) => {
           if (where.tcgdexId?.in) return where.tcgdexId.in.includes(p.tcgdexId);
+          if (where.legalStandardAuto !== undefined)
+            return (
+              p.legalStandardAuto === where.legalStandardAuto &&
+              p.regulationMark != null &&
+              !(where.setId?.notIn ?? []).includes(p.setId)
+            );
           return where.isActive === undefined || p.isActive === where.isActive;
         }),
       ),
@@ -237,5 +254,87 @@ describe("persistCatalog", () => {
     await expect(
       persistCatalog(prisma as never, { sets: [], cards: [] }),
     ).rejects.toThrow(/vazio/i);
+  });
+});
+
+describe("Standard legality of sets TCGdex has not classified yet", () => {
+  const svSet: ExternalSet = { ...setA, tcgdexId: "me05", name: "Older Set", releaseDate: "2026-08-01" };
+  const newSet: ExternalSet = { ...setA, tcgdexId: "me06", name: "Delta Reign", releaseDate: "2026-11-06" };
+  const legalOld: ExternalCard = {
+    ...cardA,
+    tcgdexId: "me05-1",
+    setTcgdexId: "me05",
+    name: "Rayquaza",
+    regulationMark: "J",
+    legalStandard: true,
+  };
+  const megaRayquaza: ExternalCard = {
+    ...cardA,
+    tcgdexId: "me06-084",
+    localId: "084",
+    setTcgdexId: "me06",
+    name: "Mega Rayquaza ex",
+    regulationMark: null,
+    legalStandard: false,
+    legalExpanded: true,
+  };
+  const stored = (prisma: ReturnType<typeof buildPrismaMock>, id: string) =>
+    prisma._printings.get(id)?.legalStandard;
+
+  it("marks cards of a newer, unclassified set as Standard", async () => {
+    const prisma = buildPrismaMock();
+    await persistCatalog(prisma as never, { sets: [svSet, newSet], cards: [legalOld, megaRayquaza] });
+    expect(stored(prisma, "me06-084")).toBe(true);
+  });
+
+  it("keeps rotated marks, non-Expanded cards and older sets out", async () => {
+    const prisma = buildPrismaMock();
+    const rotated: ExternalCard = { ...megaRayquaza, tcgdexId: "me06-2", localId: "2", regulationMark: "G" };
+    const notExpanded: ExternalCard = { ...megaRayquaza, tcgdexId: "me06-3", localId: "3", legalExpanded: false };
+    const olderNotLegal: ExternalCard = { ...legalOld, tcgdexId: "me05-2", localId: "2", legalStandard: false, regulationMark: null };
+    const sameMark: ExternalCard = { ...megaRayquaza, tcgdexId: "me06-4", localId: "4", regulationMark: "J" };
+    await persistCatalog(prisma as never, {
+      sets: [svSet, newSet],
+      cards: [legalOld, rotated, notExpanded, olderNotLegal, sameMark],
+    });
+    expect(stored(prisma, "me06-2")).toBe(false);
+    expect(stored(prisma, "me06-3")).toBe(false);
+    expect(stored(prisma, "me05-2")).toBe(false);
+    expect(stored(prisma, "me06-4")).toBe(true);
+  });
+
+  it("never invents legality when TCGdex classified nothing", async () => {
+    const prisma = buildPrismaMock();
+    await persistCatalog(prisma as never, { sets: [newSet], cards: [megaRayquaza] });
+    expect(stored(prisma, "me06-084")).toBe(false);
+  });
+
+  it("a per-set sync uses the stored catalog as reference", async () => {
+    const prisma = buildPrismaMock();
+    await persistCatalog(prisma as never, { sets: [svSet], cards: [legalOld] });
+    await persistCatalog(prisma as never, { sets: [newSet], cards: [megaRayquaza] }, { partial: true });
+    expect(stored(prisma, "me06-084")).toBe(true);
+  });
+
+  it("re-syncing the new set alone keeps it in Standard", async () => {
+    const prisma = buildPrismaMock();
+    await persistCatalog(prisma as never, { sets: [svSet, newSet], cards: [legalOld, megaRayquaza] });
+    await persistCatalog(prisma as never, { sets: [newSet], cards: [megaRayquaza] }, { partial: true });
+    expect(stored(prisma, "me06-084")).toBe(true);
+  });
+
+  it("a manual override on the set wins, and the automatic value is kept apart", async () => {
+    const prisma = buildPrismaMock();
+    await persistCatalog(prisma as never, { sets: [svSet, newSet], cards: [legalOld, megaRayquaza] });
+    prisma._sets.get("me06")!.standardOverride = false;
+    prisma._sets.get("me05")!.standardOverride = true;
+    const notLegalOld: ExternalCard = { ...legalOld, tcgdexId: "me05-9", localId: "9", legalStandard: false };
+    await persistCatalog(prisma as never, { sets: [svSet, newSet], cards: [legalOld, megaRayquaza, notLegalOld] });
+    expect(prisma._printings.get("me06-084")).toMatchObject({ legalStandard: false, legalStandardAuto: true });
+    expect(prisma._printings.get("me05-9")).toMatchObject({ legalStandard: true, legalStandardAuto: false });
+
+    prisma._sets.get("me06")!.standardOverride = null;
+    await persistCatalog(prisma as never, { sets: [svSet, newSet], cards: [legalOld, megaRayquaza] });
+    expect(prisma._printings.get("me06-084")).toMatchObject({ legalStandard: true, legalStandardAuto: true });
   });
 });

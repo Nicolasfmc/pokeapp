@@ -6,6 +6,9 @@ outro domínio, outro segredo de sessão. Lê o mesmo banco (Neon), **somente le
 ## O que tem
 - Totais da plataforma (usuários, novos em 7/30 dias, sessões ativas, decks, inventário, partidas, torneios)
 - Lista de usuários com busca por username/e-mail e paginação
+- **Coleções** (`/sets`): legalidade Standard de cada coleção da TCGdex, com opção de
+  forçar uma coleção como Standard, fora do Standard ou voltar ao automático. Vale na
+  hora para a busca do deckbuilder e a validação de formato, e os próximos syncs respeitam.
 
 ## Segurança
 - **Login próprio**: e-mail + senha da conta SleeveBuild, e a conta precisa ter
@@ -15,8 +18,9 @@ outro domínio, outro segredo de sessão. Lê o mesmo banco (Neon), **somente le
   Secure e SameSite=Strict.
 - **Permissão conferida no banco a cada página**: tirar o `isAdmin` derruba o acesso na hora.
 - **Banco somente leitura**: toda conexão abre com `default_transaction_read_only = on`;
-  só o limitador de tentativas usa uma transação de escrita explícita. Em produção use
-  o usuário dedicado abaixo, que nem tem permissão de escrita.
+  só o limitador de tentativas e o ajuste de legalidade de coleção usam uma transação de
+  escrita explícita. Em produção use o usuário dedicado abaixo, que só pode escrever
+  nessas colunas.
 - **SQL injection**: todas as queries são parametrizadas (`$1`, `$2`…); a busca escapa
   `%` e `_`. Nenhuma query lê `passwordHash` fora do login.
 - **Força bruta**: limite por IP e por conta no PostgreSQL (mesma tabela e chave do app
@@ -36,6 +40,12 @@ outro domínio, outro segredo de sessão. Lê o mesmo banco (Neon), **somente le
    GRANT SELECT ON users, user_profiles, decks, inventory_items, matches, tournaments, user_sessions
      TO sleevebuild_admin;
    GRANT SELECT, INSERT, UPDATE ON auth_rate_limits TO sleevebuild_admin;
+   -- Coleções: leitura + só as colunas do ajuste manual de Standard
+   -- (precisa da migration set_standard_override do app principal).
+   GRANT SELECT ON card_sets, card_printings TO sleevebuild_admin;
+   GRANT UPDATE ("standardOverride", "standardOverrideById", "standardOverrideAt")
+     ON card_sets TO sleevebuild_admin;
+   GRANT UPDATE ("legalStandard") ON card_printings TO sleevebuild_admin;
    ```
 3. **Marcar os administradores**:
    ```sql

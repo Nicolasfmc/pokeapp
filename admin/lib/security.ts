@@ -78,3 +78,21 @@ export function parseUsersQuery(raw: Record<string, string | string[] | undefine
   const page = Number.parseInt(first(raw.page), 10);
   return { q, page: Number.isSafeInteger(page) && page > 1 && page < 100_000 ? page : 1 };
 }
+
+/** Same `q` + `page` parsing for every paginated list. */
+export const parseListQuery = parseUsersQuery;
+
+export type StandardChoice = "standard" | "not-standard" | "auto";
+
+/** Form value → override stored on the set (null = back to automatic). */
+export function parseStandardChoice(value: unknown): { override: boolean | null } | null {
+  if (value === "standard") return { override: true };
+  if (value === "not-standard") return { override: false };
+  if (value === "auto") return { override: null };
+  return null;
+}
+
+/** Prisma cuid ids: lowercase letters and digits only. */
+export function isValidRecordId(value: unknown): value is string {
+  return typeof value === "string" && /^[a-z0-9]{20,40}$/.test(value);
+}

@@ -131,6 +131,12 @@ model CardSet {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  /// Manual Standard legality set in the admin panel (null = automatic).
+  /// Applied to the printings' `legalStandard` by the panel and by the sync.
+  standardOverride     Boolean?
+  standardOverrideById String?
+  standardOverrideAt   DateTime?
+
   printings CardPrinting[]
 
   @@index([code])
@@ -155,23 +161,26 @@ model CardLogical {
 }
 
 model CardPrinting {
-  id              String       @id @default(cuid())
-  tcgdexId        String       @unique
-  logicalCardId   String
-  setId           String
-  localId         String
-  name            String
-  category        CardCategory
-  rarity          String?
-  illustrator     String?
-  regulationMark  String?
-  legalStandard   Boolean      @default(false)
-  legalExpanded   Boolean      @default(false)
-  imageUrl        String?
-  tcgdexUpdatedAt DateTime?
-  isActive        Boolean      @default(true)
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id                String       @id @default(cuid())
+  tcgdexId          String       @unique
+  logicalCardId     String
+  setId             String
+  localId           String
+  name              String
+  category          CardCategory
+  rarity            String?
+  illustrator       String?
+  regulationMark    String?
+  /// Effective Standard legality: the set's manual override, else legalStandardAuto.
+  legalStandard     Boolean      @default(false)
+  /// Standard legality from TCGdex (plus the new-set inference), written by the sync.
+  legalStandardAuto Boolean      @default(false)
+  legalExpanded     Boolean      @default(false)
+  imageUrl          String?
+  tcgdexUpdatedAt   DateTime?
+  isActive          Boolean      @default(true)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
 
   logicalCard    CardLogical     @relation(fields: [logicalCardId], references: [id], onDelete: Restrict)
   set            CardSet         @relation(fields: [setId], references: [id], onDelete: Restrict)

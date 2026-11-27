@@ -5,10 +5,10 @@ import { Pool, type QueryResultRow } from "pg";
  * Connection to the platform database.
  *
  * Every connection starts in read-only mode (default_transaction_read_only),
- * so even a bug here can't change platform data. The only write the panel
- * does (the sign-in rate limit) opens an explicit READ WRITE transaction.
- * In production ADMIN_DATABASE_URL should also use a role that only has
- * SELECT grants (see README).
+ * so even a bug here can't change platform data. The panel's only writes
+ * (the sign-in rate limit and a set's manual Standard legality) open an
+ * explicit READ WRITE transaction. In production ADMIN_DATABASE_URL should
+ * also use a role with SELECT grants plus those few column grants (see README).
  */
 const globalForPool = globalThis as unknown as { adminPool?: Pool };
 
@@ -47,7 +47,7 @@ export async function query<T extends QueryResultRow>(
   return result.rows;
 }
 
-/** Runs `fn` inside a READ WRITE transaction (only for the rate limiter). */
+/** Runs `fn` inside a READ WRITE transaction (rate limiter and set legality only). */
 export async function withWriteTransaction<R>(
   fn: (run: <T extends QueryResultRow>(text: string, params?: ReadonlyArray<unknown>) => Promise<T[]>) => Promise<R>,
 ): Promise<R> {
