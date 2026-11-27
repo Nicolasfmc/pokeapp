@@ -4,6 +4,7 @@ import { common, enums } from "./common";
 import { deckEditor } from "./deckEditor";
 import { decks } from "./decks";
 import { home } from "./home";
+import { hosted } from "./hosted";
 import { inventory } from "./inventory";
 import { profile } from "./profile";
 import { shell } from "./shell";
@@ -23,6 +24,7 @@ export const messages = {
   ...inventory,
   ...training,
   ...tournaments,
+  ...hosted,
   ...statistics,
   ...profile,
 } as const;

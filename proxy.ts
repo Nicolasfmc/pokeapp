@@ -10,7 +10,8 @@ import { authCookieOptions, verifyAccessToken } from "@/server/auth/tokens";
 import { refreshAccessToken } from "@/server/auth/sessions";
 import { buildContentSecurityPolicy, isCrossSiteMutation } from "@/server/security";
 
-const PUBLIC_PREFIXES = ["/login", "/register", "/user"];
+// "/t" = hosted tournament pages: pairings and standings are public to anyone with the link.
+const PUBLIC_PREFIXES = ["/login", "/register", "/user", "/t"];
 
 function isPublicPath(pathname: string) {
   return PUBLIC_PREFIXES.some(
