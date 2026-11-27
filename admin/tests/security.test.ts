@@ -77,3 +77,17 @@ describe("security helpers", () => {
     expect(parseUsersQuery({ q: "x".repeat(300) }).q).toHaveLength(100);
   });
 });
+
+describe("set standard form", () => {
+  it("maps the three choices and rejects anything else", async () => {
+    const { parseStandardChoice, isValidRecordId } = await import("@/lib/security");
+    expect(parseStandardChoice("standard")).toEqual({ override: true });
+    expect(parseStandardChoice("not-standard")).toEqual({ override: false });
+    expect(parseStandardChoice("auto")).toEqual({ override: null });
+    expect(parseStandardChoice("true")).toBeNull();
+    expect(parseStandardChoice(null)).toBeNull();
+    expect(isValidRecordId("cmwuud21t005pdgd34h15ibi7")).toBe(true);
+    expect(isValidRecordId("x' OR 1=1 --")).toBe(false);
+    expect(isValidRecordId("short")).toBe(false);
+  });
+});

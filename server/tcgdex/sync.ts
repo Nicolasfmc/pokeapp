@@ -5,6 +5,12 @@ import {
   parseReleaseDate,
   parseTcgdexUpdatedAt,
 } from "./normalize";
+import {
+  buildStandardReference,
+  inferLegalStandard,
+  mergeStandardReferences,
+  type StandardReference,
+} from "./legality";
 import { TCGdexProvider } from "./provider";
 import type {
   CardDataProvider,
@@ -34,6 +40,7 @@ type ExistingPrinting = {
   illustrator: string | null;
   regulationMark: string | null;
   legalStandard: boolean;
+  legalStandardAuto: boolean;
   legalExpanded: boolean;
   imageUrl: string | null;
   tcgdexUpdatedAt: Date | null;
@@ -44,7 +51,16 @@ function toPrismaCategory(category: ExternalCard["category"]): CardCategory {
   return category as CardCategory;
 }
 
-function printingData(card: ExternalCard, logicalCardId: string, setId: string) {
+/**
+ * `card.legalStandard` is the automatic value (TCGdex + new-set inference);
+ * a manual override on the set (admin panel) wins over it.
+ */
+function printingData(
+  card: ExternalCard,
+  logicalCardId: string,
+  setId: string,
+  standardOverride: boolean | null = null,
+) {
   return {
     logicalCardId,
     setId,
@@ -54,7 +70,8 @@ function printingData(card: ExternalCard, logicalCardId: string, setId: string) 
     rarity: card.rarity,
     illustrator: card.illustrator,
     regulationMark: card.regulationMark,
-    legalStandard: card.legalStandard,
+    legalStandard: standardOverride ?? card.legalStandard,
+    legalStandardAuto: card.legalStandard,
     legalExpanded: card.legalExpanded,
     imageUrl: card.imageUrl,
     tcgdexUpdatedAt: parseTcgdexUpdatedAt(card.tcgdexUpdatedAt),
@@ -79,6 +96,7 @@ export function classifyCardChange(
     existing.illustrator === next.illustrator &&
     existing.regulationMark === next.regulationMark &&
     existing.legalStandard === next.legalStandard &&
+    existing.legalStandardAuto === next.legalStandardAuto &&
     existing.legalExpanded === next.legalExpanded &&
     existing.imageUrl === next.imageUrl &&
     (existing.tcgdexUpdatedAt?.getTime() ?? null) ===
@@ -86,10 +104,42 @@ export function classifyCardChange(
   return same ? "UNCHANGED" : "UPDATED";
 }
 
+/**
+ * Standard reference from what is already stored (used by per-set syncs).
+ * Reads the automatic value, so manual overrides never feed the inference, and
+ * skips the sets being synced: their stored value may itself be inferred, and
+ * a new set must not count as "already classified" against itself.
+ */
+async function loadStandardReference(
+  prisma: PrismaLike,
+  excludedSetIds: string[],
+): Promise<StandardReference> {
+  const [newest, marks] = await Promise.all([
+    prisma.cardSet.findFirst({
+      where: {
+        id: { notIn: excludedSetIds },
+        releaseDate: { not: null },
+        printings: { some: { legalStandardAuto: true } },
+      },
+      orderBy: { releaseDate: "desc" },
+      select: { releaseDate: true },
+    }),
+    prisma.cardPrinting.findMany({
+      where: { setId: { notIn: excludedSetIds }, legalStandardAuto: true, regulationMark: { not: null } },
+      distinct: ["regulationMark"],
+      select: { regulationMark: true },
+    }),
+  ]);
+  return {
+    legalMarks: new Set(marks.map((m) => m.regulationMark).filter((m): m is string => m !== null)),
+    newestClassifiedRelease: newest?.releaseDate ? newest.releaseDate.toISOString().slice(0, 10) : null,
+  };
+}
+
 async function upsertSet(
   prisma: PrismaLike,
   set: ExternalSet,
-): Promise<string> {
+): Promise<{ id: string; standardOverride: boolean | null }> {
   const data = {
     name: set.name,
     code: set.code,
@@ -103,8 +153,9 @@ async function upsertSet(
     where: { tcgdexId: set.tcgdexId },
     create: { tcgdexId: set.tcgdexId, ...data },
     update: data,
+    select: { id: true, standardOverride: true },
   });
-  return record.id;
+  return record;
 }
 
 async function findOrCreateLogical(
@@ -172,6 +223,7 @@ async function loadExistingPrintings(
         illustrator: true,
         regulationMark: true,
         legalStandard: true,
+        legalStandardAuto: true,
         legalExpanded: true,
         imageUrl: true,
         tcgdexUpdatedAt: true,
@@ -232,6 +284,7 @@ export async function persistCatalog(
   }
 
   const setIdByTcgdexId = new Map<string, string>();
+  const standardOverrideBySetId = new Map<string, boolean | null>();
   const logicalCache = new Map<string, string>();
   let logicalsCreated = 0;
   let cardsNew = 0;
@@ -239,8 +292,9 @@ export async function persistCatalog(
   let cardsUnchanged = 0;
 
   for (const set of catalog.sets) {
-    const id = await upsertSet(prisma, set);
+    const { id, standardOverride } = await upsertSet(prisma, set);
     setIdByTcgdexId.set(set.tcgdexId, id);
+    standardOverrideBySetId.set(id, standardOverride);
   }
 
   const existing = await loadExistingPrintings(
@@ -248,8 +302,26 @@ export async function persistCatalog(
     catalog.cards.map((card) => card.tcgdexId),
   );
 
+  const releaseDateBySet = new Map(catalog.sets.map((set) => [set.tcgdexId, set.releaseDate]));
+  let standardReference = buildStandardReference(catalog.cards, releaseDateBySet);
+  if (options.partial) {
+    // A per-set sync only sees its own cards; the rest of the catalog is in the DB.
+    standardReference = mergeStandardReferences(
+      standardReference,
+      await loadStandardReference(prisma, [...setIdByTcgdexId.values()]),
+    );
+  }
+
   let done = 0;
-  for (const card of catalog.cards) {
+  for (const rawCard of catalog.cards) {
+    const card: ExternalCard = {
+      ...rawCard,
+      legalStandard: inferLegalStandard(
+        rawCard,
+        releaseDateBySet.get(rawCard.setTcgdexId) ?? null,
+        standardReference,
+      ),
+    };
     const setId = setIdByTcgdexId.get(card.setTcgdexId);
     if (!setId) {
       throw new TcgdexSyncError(
@@ -262,7 +334,7 @@ export async function persistCatalog(
       logicalsCreated += 1;
     }
 
-    const data = printingData(card, logical.id, setId);
+    const data = printingData(card, logical.id, setId, standardOverrideBySetId.get(setId) ?? null);
     const change = classifyCardChange(existing.get(card.tcgdexId), data);
     if (change === "UNCHANGED") {
       cardsUnchanged += 1;

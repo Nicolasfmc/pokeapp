@@ -1,3 +1,4 @@
+import { AdminHeader } from "@/app/_components/AdminHeader";
 import { requireAdmin } from "@/lib/auth";
 import { USERS_PAGE_SIZE, getOverview, listUsers } from "@/lib/queries";
 import { parseUsersQuery } from "@/lib/security";
@@ -46,17 +47,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
   return (
     <main className="wrap">
-      <div className="topbar">
-        <div>
-          <div className="brand">SleeveBuild Admin</div>
-          <div className="muted">Somente leitura · conectado como @{admin.username}</div>
-        </div>
-        <form method="post" action="/api/logout">
-          <button type="submit" className="ghost">
-            Sair
-          </button>
-        </form>
-      </div>
+      <AdminHeader admin={admin} current="/" />
 
       <section className="tiles">
         {tiles.map((tile) => (
