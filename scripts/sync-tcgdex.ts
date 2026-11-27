@@ -1,6 +1,7 @@
 import { config } from "dotenv";
 import { prisma } from "../server/database/client";
 import { syncTcgdex } from "../server/tcgdex";
+import { remapSplitLogicals } from "../server/tcgdex/remap";
 
 config();
 
@@ -55,6 +56,8 @@ async function main() {
     excludedSeriesIds,
     onProgress: (done, total) => console.log(`[tcgdex] persistidas ${done}/${total}`),
   });
+  // Deck lines left on a card that the sync split into gameplay versions.
+  const remap = await remapSplitLogicals(prisma);
 
   process.stdout.write(
     [
@@ -65,6 +68,8 @@ async function main() {
       `UNCHANGED=${stats.cardsUnchanged}`,
       `REMOVED=${stats.cardsRemoved}`,
       `logicalsCreated=${stats.logicalsCreated}`,
+      `logicalsRemapped=${remap.logicalsRemapped}`,
+      `deckCardsMoved=${remap.deckCardsMoved}`,
       `elapsed=${Math.round((Date.now() - started) / 1000)}s`,
     ].join(" ") + "\n",
   );

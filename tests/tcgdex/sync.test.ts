@@ -4,7 +4,7 @@ import type { ExternalCard, ExternalSet } from "../../server/tcgdex/types";
 
 function buildPrismaMock() {
   const sets = new Map<string, { id: string; tcgdexId: string; isActive: boolean; releaseDate?: Date | null; standardOverride?: boolean | null }>();
-  const logicals = new Map<string, { id: string; canonicalName: string; category: string }>();
+  const logicals = new Map<string, { id: string; canonicalName: string; category: string; gameplayKey?: string }>();
   const printings = new Map<
     string,
     { id: string; tcgdexId: string; isActive: boolean; name: string; [key: string]: unknown }
@@ -52,12 +52,13 @@ function buildPrismaMock() {
     },
     cardLogical: {
       findUnique: vi.fn(async ({ where }) => {
-        const compound = where.canonicalName_category;
+        const compound = where.canonicalName_category_gameplayKey;
         if (!compound) return null;
         for (const logical of logicals.values()) {
           if (
             logical.canonicalName === compound.canonicalName &&
-            logical.category === compound.category
+            logical.category === compound.category &&
+            (logical.gameplayKey ?? "") === compound.gameplayKey
           ) {
             return logical;
           }
@@ -69,6 +70,7 @@ function buildPrismaMock() {
           id: nextId(),
           canonicalName: data.canonicalName,
           category: data.category,
+          gameplayKey: data.gameplayKey ?? "",
         };
         logicals.set(created.id, created);
         return created;
@@ -226,6 +228,20 @@ describe("persistCatalog", () => {
     );
     expect(stats.cardsRemoved).toBe(0);
     expect(prisma._printings.get("swsh3-1")?.isActive).toBe(true);
+  });
+
+  it("splits same-name Pokémon that play differently, groups reprints", async () => {
+    const prisma = buildPrismaMock();
+    const yveltal = (id: string, gameplayKey: string): ExternalCard => ({
+      ...cardA, tcgdexId: id, localId: id, name: "Yveltal", gameplayKey,
+    });
+    await persistCatalog(prisma as never, {
+      sets: [setA],
+      cards: [yveltal("1", "cruel-arrow"), yveltal("2", "dark-feather"), yveltal("3", "cruel-arrow")],
+    });
+    expect(prisma._logicals.size).toBe(2);
+    expect(prisma._printings.get("1")?.logicalCardId).toBe(prisma._printings.get("3")?.logicalCardId);
+    expect(prisma._printings.get("1")?.logicalCardId).not.toBe(prisma._printings.get("2")?.logicalCardId);
   });
 
   it("energia básica 'Basic Fire Energy' e 'Fire Energy' compartilham carta lógica (§18)", async () => {

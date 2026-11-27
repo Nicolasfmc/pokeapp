@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { gameplayKey } from "../../server/tcgdex/gameplay";
 import {
   buildCardImageUrl,
   logicalCardKey,
@@ -95,6 +96,7 @@ describe("normalizeCard", () => {
       imageUrl: "https://assets.tcgdex.net/en/swsh/swsh3/136/high.webp",
       tcgdexUpdatedAt: "2026-07-01T21:27:44+01:00",
       energyType: null,
+      gameplayKey: expect.any(String),
     });
   });
 
@@ -106,6 +108,7 @@ describe("normalizeCard", () => {
     expect(logicalCardKey(card.name, card.category)).toEqual({
       canonicalName: "Buddy-Buddy Poffin",
       category: "TRAINER",
+      gameplayKey: "",
     });
   });
 
@@ -125,6 +128,7 @@ describe("normalizeCard", () => {
       imageUrl: null,
       tcgdexUpdatedAt: null,
       energyType: null,
+      gameplayKey: expect.any(String),
     });
   });
 });
@@ -159,5 +163,49 @@ describe("parse datas", () => {
       parseTcgdexUpdatedAt("2026-07-01T21:27:44+01:00")?.toISOString(),
     ).toBe("2026-07-01T20:27:44.000Z");
     expect(parseTcgdexUpdatedAt("não-é-data")).toBeNull();
+  });
+});
+
+describe("gameplayKey", () => {
+  const base = {
+    hp: 120,
+    types: ["Darkness"],
+    stage: "Basic",
+    abilities: [{ name: "Cruel Arrow", type: "Ability" }],
+    attacks: [{ name: "Dark Cutter", cost: ["Darkness", "Colorless", "Colorless"], damage: 90 }],
+    retreat: 2,
+  };
+
+  it("is empty for Trainers and Energy", () => {
+    expect(gameplayKey("TRAINER", base)).toBe("");
+    expect(gameplayKey("ENERGY", base)).toBe("");
+  });
+
+  it("matches reprints even with different wording, casing and cost order", () => {
+    const reprint = {
+      ...base,
+      abilities: [{ name: "  cruel   ARROW ", type: "Ability" }],
+      attacks: [{ name: "Dark Cutter", cost: ["Colorless", "Darkness", "Colorless"], damage: "90" }],
+    };
+    expect(gameplayKey("POKEMON", reprint)).toBe(gameplayKey("POKEMON", base));
+  });
+
+  it("tells apart same-name Pokémon that play differently", () => {
+    const darkFeather = {
+      ...base,
+      hp: 110,
+      abilities: [],
+      attacks: [
+        { name: "Clutch", cost: ["Darkness"], damage: 20 },
+        { name: "Dark Feather", cost: ["Darkness", "Darkness", "Colorless"], damage: 110 },
+      ],
+    };
+    expect(gameplayKey("POKEMON", darkFeather)).not.toBe(gameplayKey("POKEMON", base));
+    expect(gameplayKey("POKEMON", { ...base, hp: 130 })).not.toBe(gameplayKey("POKEMON", base));
+  });
+
+  it("is part of the logical key only for Pokémon", () => {
+    expect(logicalCardKey("Yveltal", "POKEMON", null, "abc").gameplayKey).toBe("abc");
+    expect(logicalCardKey("Nest Ball", "TRAINER", null, "abc").gameplayKey).toBe("");
   });
 });

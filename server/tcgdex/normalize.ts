@@ -1,3 +1,4 @@
+import { gameplayKey } from "./gameplay";
 import type {
   ExternalCard,
   ExternalCardCategory,
@@ -35,12 +36,14 @@ export function buildCardImageUrl(imageBase: string | null | undefined): string 
 /**
  * Identidade lógica (§12, §18). Energias básicas compartilham identidade:
  * a TCGdex nomeia algumas como "Basic Fire Energy" e outras como "Fire Energy";
- * ambas viram "Fire Energy".
+ * ambas viram "Fire Energy". Pokémon de mesmo nome com jogo diferente
+ * (HP, ataques…) são cartas lógicas distintas (`gameplayKey`).
  */
 export function logicalCardKey(
   name: string,
   category: ExternalCardCategory,
   energyType?: string | null,
+  gameplay = "",
 ): LogicalCardKey {
   let canonicalName = name.trim().replace(/\s+/g, " ");
   if (
@@ -52,6 +55,7 @@ export function logicalCardKey(
   return {
     canonicalName,
     category,
+    gameplayKey: category === "POKEMON" ? gameplay : "",
   };
 }
 
@@ -90,6 +94,7 @@ export function normalizeCard(input: TcgdexCardNormalizeInput): ExternalCard {
     imageUrl: buildCardImageUrl(input.image),
     tcgdexUpdatedAt: input.updated ?? null,
     energyType: category === "ENERGY" ? (input.energyType ?? null) : null,
+    gameplayKey: gameplayKey(category, input),
   };
 }
 

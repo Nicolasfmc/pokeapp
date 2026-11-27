@@ -254,6 +254,9 @@ export function buildLogicalWhere(
     and.push({ printings: { some: printingFilter } });
   } else if (params.isActive !== undefined) {
     and.push({ printings: { some: { isActive: params.isActive } } });
+  } else {
+    // Legacy logical cards left empty after a gameplay split never show up.
+    and.push({ printings: { some: {} } });
   }
 
   return and.length > 0 ? { AND: and } : {};
