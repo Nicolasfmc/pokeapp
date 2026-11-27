@@ -148,13 +148,17 @@ model CardLogical {
   id            String       @id @default(cuid())
   canonicalName String
   category      CardCategory
+  /// Gameplay identity: same-name Pokémon that play differently (HP, attacks…)
+  /// are different cards. "" for Trainers/Energy and for legacy rows that
+  /// predate the split (see server/tcgdex/gameplay.ts).
+  gameplayKey   String       @default("")
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
   printings CardPrinting[]
   deckCards DeckCard[]
 
-  @@unique([canonicalName, category])
+  @@unique([canonicalName, category, gameplayKey])
   @@index([canonicalName])
   @@index([category])
   @@map("card_logicals")

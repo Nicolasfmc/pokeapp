@@ -163,8 +163,8 @@ async function findOrCreateLogical(
   card: ExternalCard,
   cache: Map<string, string>,
 ): Promise<{ id: string; created: boolean }> {
-  const key = logicalCardKey(card.name, card.category, card.energyType);
-  const cacheKey = `${key.canonicalName}::${key.category}`;
+  const key = logicalCardKey(card.name, card.category, card.energyType, card.gameplayKey ?? "");
+  const cacheKey = `${key.canonicalName}::${key.category}::${key.gameplayKey}`;
   const cached = cache.get(cacheKey);
   if (cached) {
     return { id: cached, created: false };
@@ -172,9 +172,10 @@ async function findOrCreateLogical(
 
   const category = toPrismaCategory(key.category);
   const where = {
-    canonicalName_category: {
+    canonicalName_category_gameplayKey: {
       canonicalName: key.canonicalName,
       category,
+      gameplayKey: key.gameplayKey,
     },
   };
   const existing = await prisma.cardLogical.findUnique({ where });
@@ -189,6 +190,7 @@ async function findOrCreateLogical(
       data: {
         canonicalName: key.canonicalName,
         category,
+        gameplayKey: key.gameplayKey,
       },
     });
     cache.set(cacheKey, created.id);

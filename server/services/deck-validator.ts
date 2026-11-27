@@ -221,9 +221,12 @@ export async function validateDecklist(options: {
     typeof maxCopies?.default === "number" ? maxCopies.default : 4;
   const exceptions = maxCopies?.exceptions ?? {};
 
+  // The copy limit counts by name: two different "Yveltal" cards (different
+  // gameplay versions) share the same 4 copies.
+  const byName = new Map<string, { name: string; quantity: number; logicalIds: string[] }>();
   for (const card of options.cards) {
     const logical = logicalMap.get(card.logicalCardId);
-    if (!logical) continue;
+    if (!logical || !Number.isInteger(card.quantity) || card.quantity < 1) continue;
 
     if (
       maxCopies &&
@@ -235,16 +238,22 @@ export async function validateDecklist(options: {
       continue;
     }
 
-    const limit =
-      typeof exceptions[card.logicalCardId] === "number"
-        ? exceptions[card.logicalCardId]
-        : defaultMax;
+    const key = normalizeName(logical.canonicalName);
+    const group = byName.get(key) ?? { name: logical.canonicalName, quantity: 0, logicalIds: [] };
+    group.quantity += card.quantity;
+    group.logicalIds.push(card.logicalCardId);
+    byName.set(key, group);
+  }
 
-    if (card.quantity > limit) {
+  for (const group of byName.values()) {
+    const exception = group.logicalIds.find((id) => typeof exceptions[id] === "number");
+    const limit = exception ? exceptions[exception] : defaultMax;
+
+    if (group.quantity > limit) {
       errors.push({
         code: "MAX_COPIES_EXCEEDED",
-        message: `"${logical.canonicalName}" permite no máximo ${limit} cópias (atual: ${card.quantity})`,
-        logicalCardId: card.logicalCardId,
+        message: `"${group.name}" permite no máximo ${limit} cópias (atual: ${group.quantity})`,
+        logicalCardId: group.logicalIds[0],
       });
     }
   }

@@ -26,6 +26,8 @@ export interface ExternalCard {
   tcgdexUpdatedAt: string | null;
   /** TCGdex `energyType` ("Normal" = basic energy, "Special"). Null for non-energy cards. */
   energyType?: string | null;
+  /** Gameplay identity of the card ("" for Trainers/Energy; see gameplay.ts). */
+  gameplayKey?: string;
 }
 
 export interface CardDataProvider {
@@ -59,11 +61,25 @@ export interface TcgdexCardNormalizeInput {
   legal?: { standard?: boolean; expanded?: boolean } | null;
   energyType?: string | null;
   set: { id: string };
+  // Gameplay fields (Pokémon) used to tell same-name cards apart.
+  hp?: number | null;
+  types?: string[] | null;
+  stage?: string | null;
+  evolveFrom?: string | null;
+  abilities?: Array<{ name?: string | null; type?: string | null } | null> | null;
+  attacks?: Array<{
+    name?: string | null;
+    cost?: string[] | null;
+    damage?: string | number | null;
+  } | null> | null;
+  retreat?: number | null;
 }
 
 export interface LogicalCardKey {
   canonicalName: string;
   category: ExternalCardCategory;
+  /** Gameplay identity ("" for Trainers/Energy; see gameplay.ts). */
+  gameplayKey: string;
 }
 
 export interface SyncStats {
