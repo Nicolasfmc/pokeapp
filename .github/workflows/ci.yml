@@ -24,7 +24,7 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL: postgresql://ci:ci@localhost:5432/sleevebuild?schema=public
-      AUTH_SECRET: ci-only-not-a-secret
+      AUTH_SECRET: ci-only-not-a-secret-padded-to-32-chars-min
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
